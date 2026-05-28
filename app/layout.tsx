@@ -23,6 +23,11 @@ export const metadata: Metadata = {
     "commercial properties",
   ],
   authors: [{ name: siteMetadata.company.owner || siteMetadata.company.name }],
+  icons: {
+    icon: "/icon.png",
+    shortcut: "/icon.png",
+    apple: "/apple-icon.png",
+  },
   openGraph: {
     title: siteMetadata.company.name,
     description: siteMetadata.company.description,

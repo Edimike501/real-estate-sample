@@ -1,0 +1,170 @@
+@import url("https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&display=swap");
+@import "tailwindcss";
+
+@theme {
+  --color-bg-primary: #ffffff;
+  --color-bg-secondary: #f0f5fb;
+  --color-bg-tertiary: #deeaf7;
+  --color-text-primary: #0a1628;
+  --color-text-secondary: #2d4a72;
+  --color-text-muted: #6b8db5;
+  --color-accent: #1565c0;
+  --color-accent-light: #42a5f5;
+  --color-accent-muted: rgba(21, 101, 192, 0.15);
+  --color-border: rgba(21, 101, 192, 0.12);
+  --color-border-accent: rgba(21, 101, 192, 0.35);
+  --font-display: "Cormorant Garamond", serif;
+  --font-body: "DM Sans", sans-serif;
+  --shadow-sm: 0 1px 2px rgba(21, 101, 192, 0.06);
+  --shadow-md: 0 4px 6px rgba(21, 101, 192, 0.12);
+  --shadow-lg: 0 10px 15px rgba(21, 101, 192, 0.12);
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+}
+
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
+/* ============================================================================
+   THEME TOKENS — CSS VARIABLES
+   Edit these to rebrand the entire site. Colors, fonts, spacing all here.
+   ============================================================================ */
+
+:root {
+  /* Brand colours — primary accent (Opollo blue) */
+  --color-accent: #1565c0;
+  --color-accent-light: #42a5f5;
+  --color-accent-muted: rgba(21, 101, 192, 0.15);
+
+  /* Light theme — default */
+  --color-bg-primary: #ffffff;
+  --color-bg-secondary: #f0f5fb;
+  --color-bg-tertiary: #deeaf7;
+  --color-text-primary: #0a1628;
+  --color-text-secondary: #2d4a72;
+  --color-text-muted: #6b8db5;
+  --color-border: rgba(21, 101, 192, 0.12);
+  --color-border-accent: rgba(21, 101, 192, 0.35);
+
+  /* Typography */
+  --font-display: "Cormorant Garamond", serif;
+  --font-body: "DM Sans", sans-serif;
+
+  /* Spacing scale */
+  --section-padding-y: 6rem;
+  --section-padding-x: 4rem;
+
+  /* Border radius */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(21, 101, 192, 0.06);
+  --shadow-md: 0 4px 6px rgba(21, 101, 192, 0.12);
+  --shadow-lg: 0 10px 15px rgba(21, 101, 192, 0.12);
+}
+
+/* Dark theme */
+[data-theme="dark"] {
+  --color-bg-primary: #050d1a;
+  --color-bg-secondary: #0a1628;
+  --color-bg-tertiary: #112240;
+  --color-text-primary: #e0eaf8;
+  --color-text-secondary: #a0bcd8;
+  --color-text-muted: #5a7fa8;
+  --color-border: rgba(66, 165, 245, 0.1);
+  --color-border-accent: rgba(21, 101, 192, 0.3);
+}
+
+/* ============================================================================
+   GLOBAL BASE STYLES
+   ============================================================================ */
+
+* {
+  border-color: var(--color-border);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  font-family: var(--font-body);
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-display);
+}
+
+a {
+  transition: color 0.3s ease;
+}
+
+button {
+  transition: all 0.3s ease;
+}
+
+/* ============================================================================
+   UTILITY CLASSES
+   ============================================================================ */
+
+.container-custom {
+  max-width: 80rem;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+.section-padding {
+  padding-top: var(--section-padding-y);
+  padding-bottom: var(--section-padding-y);
+  padding-left: var(--section-padding-x);
+  padding-right: var(--section-padding-x);
+}
+
+.section-padding-mobile {
+  padding-top: 3rem;
+  padding-bottom: 3rem;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+/* Responsive section padding */
+@media (max-width: 768px) {
+  .section-padding {
+    padding-top: 3rem;
+    padding-bottom: 4rem;
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+}
+
+.accent-text {
+  color: var(--color-accent);
+}
+
+.accent-border {
+  border-color: var(--color-accent);
+}
+
+.glass-effect {
+  background-color: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(1rem);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+[data-theme="dark"] .glass-effect {
+  background-color: rgba(255, 255, 255, 0.05);
+}

@@ -15,18 +15,30 @@ export default function PropertyCard({
   property,
   phoneNumber
 }: PropertyCardProps) {
+  const imageSrc = property.image ?? "/images/properties/prop-001.svg";
   const statusColors = {
+    AVAILABLE: "bg-green-500",
+    SOLD: "bg-red-500",
+    LET: "bg-red-500",
+    UNDER_OFFER: "bg-amber-500",
+    COMING_SOON: "bg-slate-500",
     Available: "bg-green-500",
     Sold: "bg-red-500",
     "Under Offer": "bg-amber-500"
   };
 
   const typeColors = {
+    SALE: "bg-blue-100 text-blue-700",
+    RENTAL: "bg-orange-100 text-orange-700",
+    LAND: "bg-green-100 text-green-700",
+    DEVELOPMENT: "bg-purple-100 text-purple-700",
     Land: "bg-blue-100 text-blue-700",
     House: "bg-purple-100 text-purple-700",
     Commercial: "bg-slate-100 text-slate-700",
     Apartment: "bg-orange-100 text-orange-700"
   };
+  const statusKey = String(property.status) as keyof typeof statusColors;
+  const typeKey = String(property.type ?? property.listingType) as keyof typeof typeColors;
 
   return (
     <AnimatedSection>
@@ -34,20 +46,20 @@ export default function PropertyCard({
         {/* Image */}
         <div className="relative h-64 overflow-hidden bg-bg-tertiary">
           <Image
-            src={property.image}
+            src={imageSrc}
             alt={property.title}
             fill
-            unoptimized={property.image.endsWith(".svg")}
+            unoptimized={imageSrc.endsWith(".svg")}
             className="object-cover hover:scale-105 transition-transform duration-300"
           />
           <div className="absolute top-4 right-4 flex gap-2">
             <span
-              className={`px-3 py-1 rounded-full text-sm font-semibold text-white ${statusColors[property.status]}`}>
-              {property.status}
+              className={`px-3 py-1 rounded-full text-sm font-semibold text-white ${statusColors[statusKey]}`}>
+              {String(property.status)}
             </span>
             <span
-              className={`px-3 py-1 rounded-full text-sm font-semibold ${typeColors[property.type]}`}>
-              {property.type}
+              className={`px-3 py-1 rounded-full text-sm font-semibold ${typeColors[typeKey]}`}>
+              {String(property.type ?? property.listingType)}
             </span>
           </div>
         </div>
@@ -90,7 +102,7 @@ export default function PropertyCard({
           {/* CTA */}
           <WhatsAppButton
             phoneNumber={phoneNumber}
-            message={property.whatsappMessage}
+            message={property.whatsappMessage ?? `Hi, I'm interested in ${property.title}.`}
             label="Enquire Now"
             className="w-full"
           />

@@ -2,6 +2,7 @@ import AnimatedSection from "@/components/ui/AnimatedSection";
 import PropertyCard from "@/components/ui/PropertyCard";
 import { properties } from "@/metadata/properties";
 import { siteMetadata } from "@/metadata/site";
+import Link from "next/link";
 
 export default function PropertiesSection() {
   const featured = properties.filter((p) => p.featured);
@@ -27,11 +28,11 @@ export default function PropertiesSection() {
           ))}
         </div>
         <div className="mt-8 text-center">
-          <a
+          <Link
             href="/properties"
             className="inline-block px-8 py-3 rounded-lg border border-accent text-accent font-semibold hover:bg-accent hover:text-white transition-all">
             View all properties
-          </a>
+          </Link>
         </div>
       </AnimatedSection>
     </section>

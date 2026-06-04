@@ -1,9 +1,10 @@
-import Footer from "@/components/layout/Footer";
-import Navbar from "@/components/layout/Navbar";
+import { QueryProvider } from "@/components/shared/query-provider";
+import WhatsAppButton from "@/components/ui/WhatsAppButton";
 import { siteMetadata } from "@/metadata/site";
 import { ThemeProvider } from "next-themes";
 import type { Metadata } from "next";
 import "./globals.css";
+import "leaflet/dist/leaflet.css";
 
 export const metadata: Metadata = {
   title: {
@@ -52,9 +53,15 @@ export default function RootLayout({
           attribute="data-theme"
           defaultTheme="light"
           enableSystem={false}>
-          <Navbar />
-          {children}
-          <Footer />
+          <QueryProvider>
+            <WhatsAppButton
+              variant="floating"
+              phoneNumber={siteMetadata.contact.whatsapp}
+              message={siteMetadata.contact.whatsappMessage}
+              label="Chat on WhatsApp"
+            />
+            {children}
+          </QueryProvider>
         </ThemeProvider>
       </body>
     </html>

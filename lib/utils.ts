@@ -1,5 +1,7 @@
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { type Property } from "@/types";
+import { PriceFrequency } from "@/types/enums";
 
 /**
  * Merge Tailwind CSS classes with clsx, removing duplicates
@@ -28,6 +30,20 @@ export function formatNGN(amount: number): string {
     currency: "NGN",
     minimumFractionDigits: 0
   }).format(amount);
+}
+
+/**
+ * Get display price including frequency for rentals
+ */
+export function getDisplayPrice(property: Property): string {
+  if (property.salePrice) return formatNGN(property.salePrice);
+  if (property.rentalPrice) {
+    const price = formatNGN(property.rentalPrice);
+    if (property.priceFrequency === PriceFrequency.PER_YEAR) return `${price} / Year`;
+    if (property.priceFrequency === PriceFrequency.PER_MONTH) return `${price} / Month`;
+    return price;
+  }
+  return "Contact for price";
 }
 
 /**

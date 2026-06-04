@@ -1,22 +1,22 @@
 "use client";
 
 import {
-  ImagePlus,
-  Loader2,
-  Trash2,
-  UploadCloud,
-  Video,
-  X
+    ImagePlus,
+    Loader2,
+    Trash2,
+    UploadCloud,
+    Video,
+    X
 } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
-  ChangeEvent,
-  DragEvent,
-  FormEvent,
-  useEffect,
-  useRef,
-  useState
+    ChangeEvent,
+    DragEvent,
+    FormEvent,
+    useEffect,
+    useRef,
+    useState
 } from "react";
 
 import { MapPicker } from "@/components/admin/MapPicker";
@@ -96,7 +96,7 @@ export function PropertyForm({ property }: PropertyFormProps) {
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
-    const payload = Object.fromEntries(formData.entries());
+    const payload = Object.fromEntries(formData.entries()) as Record<string, unknown>;
 
     // Add location data to payload
     if (latitude !== undefined) payload.latitude = latitude;

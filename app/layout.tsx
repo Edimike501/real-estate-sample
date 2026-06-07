@@ -1,15 +1,19 @@
 import { QueryProvider } from "@/components/shared/query-provider";
 import WhatsAppButton from "@/components/ui/WhatsAppButton";
 import { siteMetadata } from "@/metadata/site";
-import { ThemeProvider } from "next-themes";
-import type { Metadata } from "next";
-import "./globals.css";
 import "leaflet/dist/leaflet.css";
+import type { Metadata } from "next";
+import { ThemeProvider } from "next-themes";
+import "./globals.css";
 
 export const metadata: Metadata = {
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_APP_URL ?? "https://www.opolloluxuries.com"
+  ),
+
   title: {
     default: siteMetadata.company.name,
-    template: `%s | ${siteMetadata.company.name}`,
+    template: `%s | ${siteMetadata.company.name}`
   },
   description: siteMetadata.company.description,
   keywords: [
@@ -22,23 +26,39 @@ export const metadata: Metadata = {
     "land for sale",
     "residential properties",
     "commercial properties",
+    "Opollo Luxury Properties", // ← ADD brand name
+    "buy house Lagos", // ← ADD high-intent keyword
+    "Nigerian Diaspora real estate" // ← ADD Diaspora keyword
   ],
   authors: [{ name: siteMetadata.company.owner || siteMetadata.company.name }],
   icons: {
     icon: "/icon.png",
     shortcut: "/icon.png",
-    apple: "/apple-icon.png",
+    apple: "/apple-icon.png"
   },
   openGraph: {
     title: siteMetadata.company.name,
     description: siteMetadata.company.description,
     type: "website",
+    url: "https://www.opolloluxuries.com", // ← ADD THIS (fixes og:url)
+    siteName: siteMetadata.company.name, // ← ADD THIS (fixes og:site_name)
+    locale: "en_NG", // ← ADD THIS
+    images: [
+      // ← ADD THIS BLOCK (fixes og:image)
+      {
+        url: "/og-image.jpg",
+        width: 1200,
+        height: 630,
+        alt: `${siteMetadata.company.name} — Premium Real Estate in Nigeria`
+      }
+    ]
   },
   twitter: {
     card: "summary_large_image",
     title: siteMetadata.company.name,
     description: siteMetadata.company.description,
-  },
+    images: ["/og-image.jpg"] // ← ADD THIS (Twitter card image)
+  }
 };
 
 export default function RootLayout({

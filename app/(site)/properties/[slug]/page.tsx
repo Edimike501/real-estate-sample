@@ -1,23 +1,71 @@
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 
 import { InquiryForm } from "@/components/property/InquiryForm";
 import { PropertyDetailHero } from "@/components/property/PropertyDetailHero";
 import { PropertyMap } from "@/components/property/PropertyMap";
-import { prisma } from "@/lib/prisma";
+import {
+  getPropertyBySlug,
+  buildPropertyDescription,
+  optimizeCloudinaryUrl,
+} from "@/lib/properties";
 
-export default async function PropertyDetailPage({ params }: { params: Promise<{ slug: string }> }) {
+type Props = {
+  params: Promise<{ slug: string }>;
+};
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const property = await prisma.property.findFirst({
-    where: {
-      slug,
-      deletedAt: null,
+  const property = await getPropertyBySlug(slug);
+
+  if (!property) {
+    return {
+      title: "Property Not Found — Opollo Luxury Properties",
+      description: "The property you're looking for could not be found.",
+    };
+  }
+
+  // Get first media item or fallback to default OG image
+  const ogImage = property.media?.[0]?.url ?? "/og-image.jpg";
+  const optimizedImage = optimizeCloudinaryUrl(ogImage);
+  
+  // Build location string
+  const location = [property.city, property.state].filter(Boolean).join(", ");
+  
+  // Build OG description with price, specs, and location
+  const ogDescription = buildPropertyDescription(property);
+
+  return {
+    title: `${property.title} — ${location} | Opollo Luxury Properties`,
+    description: property.description.slice(0, 160),
+    openGraph: {
+      title: property.title,
+      description: ogDescription,
+      url: `https://www.opolloluxuries.com/properties/${property.slug}`,
+      siteName: "Opollo Luxury Properties",
+      images: [
+        {
+          url: optimizedImage,
+          width: 1200,
+          height: 630,
+          alt: property.title,
+        },
+      ],
+      type: "website",
+      locale: "en_NG",
     },
-    include: {
-      media: {
-        orderBy: { order: "asc" },
-      },
+    twitter: {
+      card: "summary_large_image",
+      title: property.title,
+      description: ogDescription,
+      images: [optimizedImage],
     },
-  });
+  };
+}
+
+export default async function PropertyDetailPage({ params }: Props) {
+  const { slug } = await params;
+  const property = await getPropertyBySlug(slug);
 
   if (!property) notFound();
 
@@ -31,10 +79,10 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
             <p className="whitespace-pre-line text-text-secondary">{property.description}</p>
           </section>
           <PropertyMap
-            latitude={property.latitude}
-            longitude={property.longitude}
-            address={property.address}
-            landmark={property.landmark}
+            latitude={property.latitude ?? null}
+            longitude={property.longitude ?? null}
+            address={property.address ?? null}
+            landmark={property.landmark ?? null}
             propertyTitle={property.title}
           />
         </div>

@@ -4,6 +4,7 @@ import { siteMetadata } from "@/metadata/site";
 import "leaflet/dist/leaflet.css";
 import type { Metadata } from "next";
 import { ThemeProvider } from "next-themes";
+import Script from "next/script";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -26,6 +27,8 @@ export const metadata: Metadata = {
     "land for sale",
     "residential properties",
     "commercial properties",
+    "Opollo", // ← ADD brand name
+    "Opollo Luxury", // ← ADD brand name
     "Opollo Luxury Properties", // ← ADD brand name
     "buy house Lagos", // ← ADD high-intent keyword
     "Nigerian Diaspora real estate" // ← ADD Diaspora keyword
@@ -35,6 +38,9 @@ export const metadata: Metadata = {
     icon: "/icon.png",
     shortcut: "/icon.png",
     apple: "/apple-icon.png"
+    /* icon: "/og-image.png",
+    shortcut: "/og-image.png",
+    apple: "/og-image.png" */
   },
   openGraph: {
     title: siteMetadata.company.name,
@@ -58,6 +64,9 @@ export const metadata: Metadata = {
     title: siteMetadata.company.name,
     description: siteMetadata.company.description,
     images: ["/og-image.jpg"] // ← ADD THIS (Twitter card image)
+  },
+  verification: {
+    google: "QNfT_B0u38uhJYWrXmuR5gtsGA5MO8ekvEJmoHOqvy8"
   }
 };
 
@@ -68,6 +77,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
+      {/*  <meta
+        name="google-site-verification"
+        content="QNfT_B0u38uhJYWrXmuR5gtsGA5MO8ekvEJmoHOqvy8"
+      /> */}
       <body>
         <ThemeProvider
           attribute="data-theme"
@@ -83,6 +96,26 @@ export default function RootLayout({
             {children}
           </QueryProvider>
         </ThemeProvider>
+
+        {/* Google Analytics Engine */}
+        {process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID && (
+          <>
+            <Script
+              src={`https://www.googletagmanager.com/gtag/js?id=${process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID}`}
+              strategy="afterInteractive"
+            />
+            <Script id="google-analytics" strategy="afterInteractive">
+              {`
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){dataLayer.push(arguments);}
+                gtag('js', new Date());
+                gtag('config', '${process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID}', {
+                  page_path: window.location.pathname,
+                });
+              `}
+            </Script>
+          </>
+        )}
       </body>
     </html>
   );

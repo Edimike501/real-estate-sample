@@ -11,6 +11,7 @@ type PropertyMapProps = {
   address: string | null;
   landmark: string | null;
   propertyTitle: string;
+  heightClassName?: string;
 };
 
 export function PropertyMap({
@@ -18,7 +19,8 @@ export function PropertyMap({
   longitude,
   address,
   landmark,
-  propertyTitle
+  propertyTitle,
+  heightClassName = "h-[320px]"
 }: PropertyMapProps) {
   const location = useMemo(() => {
     if (latitude === null || longitude === null) return null;
@@ -42,7 +44,7 @@ export function PropertyMap({
 
   return (
     <section className="space-y-3 rounded-lg border border-border bg-bg-secondary p-3">
-      <div className="h-[320px] overflow-hidden rounded-lg">
+      <div className={`${heightClassName} overflow-hidden rounded-lg`}>
         <MapContainer
           center={location}
           zoom={15}

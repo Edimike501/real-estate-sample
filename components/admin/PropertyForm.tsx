@@ -23,6 +23,7 @@ import { MapPicker } from "@/components/admin/MapPicker";
 import { AppSelect } from "@/components/ui/app-select";
 import { type Property, type PropertyMedia } from "@/types";
 import { ListingType, MediaType, PropertyStatus } from "@/types/enums";
+import { formatEnum } from "@/lib/utils";
 
 type PropertyFormProps = {
   property?: Property;
@@ -289,135 +290,220 @@ export function PropertyForm({ property }: PropertyFormProps) {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
+      {/* 1. Property Form */}
       <form
         onSubmit={onSubmit}
-        className="space-y-3 rounded-lg border border-border bg-bg-secondary p-4">
-        <input
-          name="slug"
-          defaultValue={property?.slug}
-          placeholder="Slug"
-          required
-          className="w-full rounded-md border border-border bg-bg-primary px-3 py-2 text-sm"
-        />
-        <input
-          name="title"
-          defaultValue={property?.title}
-          placeholder="Title"
-          required
-          className="w-full rounded-md border border-border bg-bg-primary px-3 py-2 text-sm"
-        />
-        <textarea
-          name="description"
-          defaultValue={property?.description}
-          placeholder="Description"
-          required
-          className="min-h-28 w-full rounded-md border border-border bg-bg-primary px-3 py-2 text-sm"
-        />
-        <AppSelect
-          name="listingType"
-          defaultValue={String(property?.listingType ?? ListingType.SALE)}
-          placeholder="Listing Type"
-          options={Object.values(ListingType).map((value) => ({
-            value,
-            label: value
-          }))}
-        />
-        <AppSelect
-          name="status"
-          defaultValue={String(property?.status ?? PropertyStatus.AVAILABLE)}
-          placeholder="Property Status"
-          options={Object.values(PropertyStatus).map((value) => ({
-            value,
-            label: value
-          }))}
-        />
-        <input
-          name="city"
-          defaultValue={property?.city}
-          placeholder="City"
-          required
-          className="w-full rounded-md border border-border bg-bg-primary px-3 py-2 text-sm"
-        />
-        <input
-          name="state"
-          defaultValue={property?.state ?? "Lagos"}
-          placeholder="State"
-          required
-          className="w-full rounded-md border border-border bg-bg-primary px-3 py-2 text-sm"
-        />
-        <input
-          name="country"
-          defaultValue={property?.country ?? "Nigeria"}
-          placeholder="Country"
-          required
-          className="w-full rounded-md border border-border bg-bg-primary px-3 py-2 text-sm"
-        />
-
-        <div className="space-y-3 rounded-lg border border-border/50 bg-bg-primary p-4">
-          <div>
-            <label
-              htmlFor="address"
-              className="block text-sm font-semibold text-text-primary mb-2">
-              Street Address
+        className="space-y-4 rounded-lg border border-border bg-bg-secondary p-5 shadow-sm">
+        
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          {/* Title */}
+          <div className="space-y-1">
+            <label htmlFor="title" className="block text-sm font-semibold text-text-primary">
+              Property Title
             </label>
             <input
-              id="address"
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
-              placeholder="e.g., 123 Main Street, Victoria Island"
-              className="w-full rounded-md border border-border bg-bg-secondary px-3 py-2 text-sm"
+              id="title"
+              name="title"
+              defaultValue={property?.title}
+              placeholder="e.g. Luxury 4-Bedroom Duplex"
+              required
+              className="w-full rounded-md border border-border bg-bg-primary px-3 py-2.5 text-sm text-text-primary focus:border-accent focus:outline-none"
             />
           </div>
 
-          <div>
-            <label
-              htmlFor="landmark"
-              className="block text-sm font-semibold text-text-primary mb-2">
-              Landmark / Area
+          {/* Slug */}
+          <div className="space-y-1">
+            <label htmlFor="slug" className="block text-sm font-semibold text-text-primary">
+              Slug / URL Identifier
             </label>
             <input
-              id="landmark"
-              value={landmark}
-              onChange={(e) => setLandmark(e.target.value)}
-              placeholder="e.g., Near Lekki Phase 1 Gate"
-              className="w-full rounded-md border border-border bg-bg-secondary px-3 py-2 text-sm"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-text-primary mb-2">
-              Location on Map
-            </label>
-            <MapPicker
-              initialLat={latitude}
-              initialLng={longitude}
-              onLocationChange={(lat, lng, reverseGeocodedAddress) => {
-                setLatitude(lat);
-                setLongitude(lng);
-                // Only auto-fill address if empty
-                if (!address && reverseGeocodedAddress) {
-                  setAddress(reverseGeocodedAddress);
-                }
-              }}
+              id="slug"
+              name="slug"
+              defaultValue={property?.slug}
+              placeholder="e.g. luxury-4-bedroom-duplex"
+              required
+              className="w-full rounded-md border border-border bg-bg-primary px-3 py-2.5 text-sm text-text-primary focus:border-accent focus:outline-none"
             />
           </div>
         </div>
 
-        <button
-          type="submit"
-          className="rounded-md bg-accent px-4 py-2 text-sm font-semibold text-white">
-          Save Property
-        </button>
-        {formStatus ? (
-          <p className="text-sm text-text-secondary">{formStatus}</p>
-        ) : null}
+        {/* Description */}
+        <div className="space-y-1">
+          <label htmlFor="description" className="block text-sm font-semibold text-text-primary">
+            Description
+          </label>
+          <textarea
+            id="description"
+            name="description"
+            defaultValue={property?.description}
+            placeholder="Detailed description of the property features, amenities, and surroundings..."
+            required
+            className="min-h-32 w-full rounded-md border border-border bg-bg-primary px-3 py-2.5 text-sm text-text-primary focus:border-accent focus:outline-none leading-relaxed"
+          />
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          {/* Listing Type */}
+          <div className="space-y-1">
+            <label className="block text-sm font-semibold text-text-primary">
+              Listing Type
+            </label>
+            <AppSelect
+              name="listingType"
+              defaultValue={String(property?.listingType ?? ListingType.SALE)}
+              placeholder="Listing Type"
+              options={Object.values(ListingType).map((value) => ({
+                value,
+                label: formatEnum(value)
+              }))}
+            />
+          </div>
+
+          {/* Status */}
+          <div className="space-y-1">
+            <label className="block text-sm font-semibold text-text-primary">
+              Property Status
+            </label>
+            <AppSelect
+              name="status"
+              defaultValue={String(property?.status ?? PropertyStatus.AVAILABLE)}
+              placeholder="Property Status"
+              options={Object.values(PropertyStatus).map((value) => ({
+                value,
+                label: formatEnum(value)
+              }))}
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          {/* City */}
+          <div className="space-y-1">
+            <label htmlFor="city" className="block text-sm font-semibold text-text-primary">
+              City
+            </label>
+            <input
+              id="city"
+              name="city"
+              defaultValue={property?.city}
+              placeholder="e.g. Lekki"
+              required
+              className="w-full rounded-md border border-border bg-bg-primary px-3 py-2.5 text-sm text-text-primary focus:border-accent focus:outline-none"
+            />
+          </div>
+
+          {/* State */}
+          <div className="space-y-1">
+            <label htmlFor="state" className="block text-sm font-semibold text-text-primary">
+              State
+            </label>
+            <input
+              id="state"
+              name="state"
+              defaultValue={property?.state ?? "Lagos"}
+              placeholder="e.g. Lagos"
+              required
+              className="w-full rounded-md border border-border bg-bg-primary px-3 py-2.5 text-sm text-text-primary focus:border-accent focus:outline-none"
+            />
+          </div>
+
+          {/* Country */}
+          <div className="space-y-1">
+            <label htmlFor="country" className="block text-sm font-semibold text-text-primary">
+              Country
+            </label>
+            <input
+              id="country"
+              name="country"
+              defaultValue={property?.country ?? "Nigeria"}
+              placeholder="e.g. Nigeria"
+              required
+              className="w-full rounded-md border border-border bg-bg-primary px-3 py-2.5 text-sm text-text-primary focus:border-accent focus:outline-none"
+            />
+          </div>
+        </div>
+
+        {/* Location Sub-Card */}
+        <div className="space-y-4 rounded-lg border border-border/50 bg-bg-primary p-4 mt-2">
+          <h3 className="text-sm font-bold text-text-primary uppercase tracking-wider border-b border-border/50 pb-2">
+            Detailed Location & Coordinates
+          </h3>
+
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div>
+              <label
+                htmlFor="address"
+                className="block text-sm font-semibold text-text-primary mb-1">
+                Street Address
+              </label>
+              <input
+                id="address"
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                placeholder="e.g., 123 Main Street, Victoria Island"
+                className="w-full rounded-md border border-border bg-bg-secondary px-3 py-2.5 text-sm text-text-primary focus:border-accent focus:outline-none"
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="landmark"
+                className="block text-sm font-semibold text-text-primary mb-1">
+                Landmark / Area
+              </label>
+              <input
+                id="landmark"
+                value={landmark}
+                onChange={(e) => setLandmark(e.target.value)}
+                placeholder="e.g., Near Lekki Phase 1 Gate"
+                className="w-full rounded-md border border-border bg-bg-secondary px-3 py-2.5 text-sm text-text-primary focus:border-accent focus:outline-none"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-text-primary mb-2">
+              Select Location on Map
+            </label>
+            <div className="rounded-lg border border-border overflow-hidden bg-bg-secondary">
+              <MapPicker
+                initialLat={latitude}
+                initialLng={longitude}
+                onLocationChange={(lat, lng, reverseGeocodedAddress) => {
+                  setLatitude(lat);
+                  setLongitude(lng);
+                  if (!address && reverseGeocodedAddress) {
+                    setAddress(reverseGeocodedAddress);
+                  }
+                }}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Submit */}
+        <div className="pt-3 border-t border-border flex items-center gap-4 flex-wrap">
+          <button
+            type="submit"
+            className="rounded-md bg-accent px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:opacity-90 transition cursor-pointer">
+            Save Property
+          </button>
+          {formStatus ? (
+            <p className={`text-xs font-semibold ${formStatus.includes("saved") ? "text-green-600 dark:text-green-400" : "text-red-500"}`}>
+              {formStatus}
+            </p>
+          ) : null}
+        </div>
       </form>
 
+      {/* 2. Media Section */}
       {property ? (
         <form
           onSubmit={uploadStaged}
-          className="overflow-hidden rounded-lg border border-border bg-bg-secondary">
+          className="overflow-hidden rounded-lg border border-border bg-bg-secondary shadow-sm">
+          
+          {/* File Inputs (Hidden) */}
           <input
             ref={imageInputRef}
             type="file"
@@ -442,14 +528,15 @@ export function PropertyForm({ property }: PropertyFormProps) {
             className="sr-only"
           />
 
-          <div className="border-b border-border p-4">
+          {/* Media Header */}
+          <div className="border-b border-border p-4 bg-bg-secondary">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <h2 className="text-lg font-semibold text-text-primary">
-                  Property media
+                  Property Media Manager
                 </h2>
-                <p className="text-sm text-text-muted">
-                  Manage images, videos, and the tour video for this property.
+                <p className="text-xs text-text-muted">
+                  Attach HD images, walk-through videos, or virtual tours to this property listing.
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
@@ -458,28 +545,32 @@ export function PropertyForm({ property }: PropertyFormProps) {
                     type="button"
                     onClick={clearStaged}
                     disabled={isUploading}
-                    className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm font-semibold text-text-secondary transition hover:border-red-400 hover:text-red-300 disabled:opacity-60">
-                    <X size={16} />
-                    Clear
+                    className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-2 text-xs font-semibold text-text-secondary transition hover:border-red-400 hover:text-red-500 bg-bg-primary disabled:opacity-60">
+                    <X size={14} />
+                    Cancel
                   </button>
                 ) : null}
                 <button
                   type="submit"
                   disabled={!staged.length || isUploading}
-                  className="inline-flex items-center gap-2 rounded-md bg-accent px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50">
+                  className="inline-flex items-center gap-1.5 rounded-md bg-accent px-4 py-2 text-xs font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 shadow-sm">
                   {isUploading ? (
-                    <Loader2 size={16} className="animate-spin" />
+                    <Loader2 size={14} className="animate-spin" />
                   ) : (
-                    <UploadCloud size={16} />
+                    <UploadCloud size={14} />
                   )}
-                  {isUploading ? "Uploading" : "Upload selected media"}
+                  {isUploading ? "Uploading..." : "Upload Selection"}
                 </button>
               </div>
             </div>
           </div>
 
-          <div className="grid gap-4 p-4 lg:grid-cols-[1fr_1fr]">
-            <div className="space-y-3">
+          {/* Media Interactive Area */}
+          <div className="grid gap-5 p-4 lg:grid-cols-2">
+            
+            {/* Left: Upload and Controls */}
+            <div className="space-y-4">
+              {/* Drag Zone */}
               <div
                 onDragOver={(event) => {
                   event.preventDefault();
@@ -488,71 +579,72 @@ export function PropertyForm({ property }: PropertyFormProps) {
                 onDragLeave={() => setIsDragging(false)}
                 onDrop={onDrop}
                 onClick={() => imageInputRef.current?.click()}
-                className={`relative flex min-h-64 cursor-pointer flex-col justify-end overflow-hidden rounded-lg border border-dashed transition ${
+                className={`relative flex min-h-52 cursor-pointer flex-col justify-end overflow-hidden rounded-lg border border-dashed transition ${
                   isDragging
                     ? "border-accent bg-accent/10"
-                    : "border-border bg-bg-primary"
+                    : "border-border bg-bg-primary hover:border-accent/40"
                 }`}>
                 <div
-                  className="absolute inset-0 bg-[linear-gradient(135deg,rgba(57,75,209,0.18),rgba(8,12,32,0.96))]"
+                  className="absolute inset-0 bg-[linear-gradient(135deg,rgba(57,75,209,0.06),rgba(8,12,32,0.92))]"
                   aria-hidden="true"
                 />
-                <div className="relative p-5">
-                  <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-lg border border-white/20 bg-white/10 text-white backdrop-blur">
-                    <ImagePlus size={24} />
+                <div className="relative p-4 text-white">
+                  <div className="mb-2 inline-flex h-10 w-10 items-center justify-center rounded-lg border border-white/20 bg-white/10 text-white backdrop-blur">
+                    <ImagePlus size={20} />
                   </div>
-                  <h3 className="text-xl font-semibold text-white">
-                    Drop property images here
+                  <h3 className="text-lg font-semibold">
+                    Drag & Drop Property Images
                   </h3>
-                  <p className="mt-1 max-w-xl text-sm text-white/75">
-                    Select images here, or use the buttons below for videos and
-                    tour video.
+                  <p className="mt-0.5 text-xs text-white/70">
+                    Or click here to browse files. Use controls below to upload video/tours.
                   </p>
                 </div>
               </div>
 
-              <div className="flex flex-wrap gap-2">
+              {/* Upload Buttons */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                 <button
                   type="button"
                   onClick={() => imageInputRef.current?.click()}
-                  className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm font-semibold text-text-secondary transition hover:border-accent hover:text-text-primary">
-                  <ImagePlus size={16} />
-                  Add images
+                  className="inline-flex items-center justify-center gap-1.5 rounded-md border border-border px-3 py-2.5 text-xs font-semibold text-text-secondary bg-bg-primary transition hover:border-accent hover:text-text-primary">
+                  <ImagePlus size={14} />
+                  Add Images
                 </button>
                 <button
                   type="button"
                   onClick={() => videoInputRef.current?.click()}
-                  className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm font-semibold text-text-secondary transition hover:border-accent hover:text-text-primary">
-                  <Video size={16} />
-                  Add videos
+                  className="inline-flex items-center justify-center gap-1.5 rounded-md border border-border px-3 py-2.5 text-xs font-semibold text-text-secondary bg-bg-primary transition hover:border-accent hover:text-text-primary">
+                  <Video size={14} />
+                  Add Videos
                 </button>
                 <button
                   type="button"
                   onClick={() => tourInputRef.current?.click()}
                   disabled={hasTourVideo}
-                  className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm font-semibold text-text-secondary transition hover:border-accent hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-50">
-                  <Video size={16} />
-                  Add tour video
+                  className="inline-flex items-center justify-center gap-1.5 rounded-md border border-border px-3 py-2.5 text-xs font-semibold text-text-secondary bg-bg-primary transition hover:border-accent hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-50">
+                  <Video size={14} />
+                  Add Tour Video
                 </button>
               </div>
 
-              <div>
-                <p className="mb-3 text-sm font-semibold text-text-primary">
-                  Uploaded media
+              {/* Uploaded Gallery */}
+              <div className="pt-2 border-t border-border/80">
+                <p className="mb-2 text-xs font-bold uppercase tracking-wider text-text-muted">
+                  Attached Gallery ({media.length})
                 </p>
                 {media.length ? (
-                  <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="grid gap-3 sm:grid-cols-2 max-h-96 overflow-y-auto pr-1">
                     {media.map((item, index) => (
                       <div
                         key={item.id}
-                        className="overflow-hidden rounded-lg border border-border bg-bg-primary">
+                        className="overflow-hidden rounded-lg border border-border bg-bg-primary flex flex-col justify-between shadow-xs">
                         <div className="relative aspect-video bg-bg-secondary">
                           {item.mediaType === MediaType.IMAGE ? (
                             <Image
                               src={item.thumbnailUrl || item.url}
                               alt={item.altText || property.title}
                               fill
-                              sizes="(max-width: 640px) 100vw, 50vw"
+                              sizes="(max-width: 640px) 100vw, 30vw"
                               className="object-cover"
                             />
                           ) : (
@@ -562,12 +654,12 @@ export function PropertyForm({ property }: PropertyFormProps) {
                               className="h-full w-full bg-black object-contain"
                             />
                           )}
-                          <span className="absolute left-2 top-2 rounded-md bg-bg-primary/90 px-2 py-1 text-xs font-semibold text-text-primary">
+                          <span className="absolute left-1.5 top-1.5 rounded bg-bg-primary/90 px-1.5 py-0.5 text-[10px] font-bold text-text-primary border border-border">
                             {index + 1}. {getMediaLabel(item.mediaType)}
                           </span>
                         </div>
-                        <div className="flex items-center justify-between gap-3 p-3">
-                          <p className="min-w-0 truncate text-sm text-text-secondary">
+                        <div className="flex items-center justify-between gap-2 p-2 bg-bg-secondary/30">
+                          <p className="min-w-0 truncate text-xs text-text-secondary">
                             {item.altText || item.publicId}
                           </p>
                           <button
@@ -575,11 +667,11 @@ export function PropertyForm({ property }: PropertyFormProps) {
                             onClick={() => void deleteMedia(item)}
                             disabled={deletingId === item.id}
                             title="Remove media"
-                            className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-border text-text-secondary transition hover:border-red-400 hover:text-red-300 disabled:opacity-60">
+                            className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-border text-text-secondary transition hover:border-red-400 hover:text-red-500 bg-bg-primary disabled:opacity-60">
                             {deletingId === item.id ? (
-                              <Loader2 size={15} className="animate-spin" />
+                              <Loader2 size={13} className="animate-spin" />
                             ) : (
-                              <Trash2 size={15} />
+                              <Trash2 size={13} />
                             )}
                           </button>
                         </div>
@@ -587,46 +679,46 @@ export function PropertyForm({ property }: PropertyFormProps) {
                     ))}
                   </div>
                 ) : (
-                  <div className="flex min-h-32 items-center justify-center rounded-lg border border-border bg-bg-primary p-6 text-center">
-                    <p className="text-sm text-text-muted">
-                      No media uploaded yet.
+                  <div className="flex min-h-24 items-center justify-center rounded-lg border border-border bg-bg-primary p-4 text-center">
+                    <p className="text-xs text-text-muted">
+                      No media files uploaded yet.
                     </p>
                   </div>
                 )}
               </div>
             </div>
 
-            <div className="space-y-3">
-              <p className="text-sm font-semibold text-text-primary">
-                Selected previews
+            {/* Right: Selected Selection Queue */}
+            <div className="space-y-4 border-t lg:border-t-0 lg:border-l border-border/80 lg:pl-5 pt-4 lg:pt-0">
+              <p className="text-xs font-bold uppercase tracking-wider text-text-muted">
+                Selected Previews Queue ({staged.length})
               </p>
               {staged.length ? (
-                <div className="max-h-[34rem] space-y-3 overflow-y-auto pr-1">
+                <div className="max-h-[30rem] space-y-3 overflow-y-auto pr-1">
                   {staged.map((item, index) => (
                     <div
                       key={item.id}
-                      className="grid grid-cols-[88px_1fr_auto] gap-3 rounded-lg border border-border bg-bg-primary p-2">
+                      className="grid grid-cols-[80px_1fr_auto] gap-3 rounded-lg border border-border bg-bg-primary p-2 items-center">
                       {item.mediaType === MediaType.IMAGE ? (
                         <div
-                          className="h-20 rounded-md bg-cover bg-center"
+                          className="h-16 rounded bg-cover bg-center border border-border"
                           style={{ backgroundImage: `url(${item.previewUrl})` }}
                           aria-label={item.file.name}
                         />
                       ) : (
                         <video
                           src={item.previewUrl}
-                          className="h-20 rounded-md bg-black object-cover"
+                          className="h-16 rounded bg-black object-cover border border-border"
                           muted
                         />
                       )}
-                      <div className="min-w-0 space-y-2">
+                      <div className="min-w-0 space-y-1.5">
                         <div>
-                          <p className="truncate text-sm font-semibold text-text-primary">
+                          <p className="truncate text-xs font-semibold text-text-primary">
                             {index + 1}. {item.file.name}
                           </p>
-                          <p className="text-xs text-text-muted">
-                            {getMediaLabel(item.mediaType)} /{" "}
-                            {formatFileSize(item.file.size)}
+                          <p className="text-[10px] text-text-muted">
+                            {getMediaLabel(item.mediaType)} / {formatFileSize(item.file.size)}
                           </p>
                         </div>
                         <input
@@ -634,8 +726,8 @@ export function PropertyForm({ property }: PropertyFormProps) {
                           onChange={(event) =>
                             updateAltText(item.id, event.target.value)
                           }
-                          placeholder="Alt text"
-                          className="w-full rounded-md border border-border bg-bg-secondary px-2 py-1.5 text-xs text-text-primary"
+                          placeholder="Alt description text (highly recommended)"
+                          className="w-full rounded border border-border bg-bg-secondary px-2 py-1 text-xs text-text-primary focus:outline-none focus:border-accent"
                         />
                       </div>
                       <button
@@ -643,32 +735,35 @@ export function PropertyForm({ property }: PropertyFormProps) {
                         onClick={() => removeStaged(item.id)}
                         disabled={isUploading}
                         title="Remove selection"
-                        className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-border text-text-secondary transition hover:border-red-400 hover:text-red-300 disabled:opacity-60">
-                        <Trash2 size={15} />
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-border text-text-secondary bg-bg-primary transition hover:border-red-400 hover:text-red-500 disabled:opacity-60">
+                        <Trash2 size={14} />
                       </button>
                     </div>
                   ))}
                 </div>
               ) : (
                 <div className="flex min-h-48 items-center justify-center rounded-lg border border-border bg-bg-primary p-6 text-center">
-                  <p className="text-sm text-text-muted">
-                    No files selected yet.
+                  <p className="text-xs text-text-muted">
+                    Your upload queue is currently empty.
                   </p>
                 </div>
               )}
               {mediaStatus ? (
-                <p className="text-sm text-text-secondary">{mediaStatus}</p>
+                <p className="text-xs font-semibold text-text-secondary bg-bg-primary/50 border border-border p-2 rounded text-center">
+                  {mediaStatus}
+                </p>
               ) : null}
             </div>
+
           </div>
         </form>
       ) : (
-        <section className="rounded-lg border border-border bg-bg-secondary p-4">
-          <h2 className="text-lg font-semibold text-text-primary">
-            Property media
+        <section className="rounded-lg border border-border bg-bg-secondary p-5 shadow-sm text-center">
+          <h2 className="text-base font-semibold text-text-primary">
+            Property Media Manager
           </h2>
-          <p className="mt-1 text-sm text-text-muted">
-            Save the property first to upload images, videos, and a tour video.
+          <p className="mt-1 text-xs text-text-muted">
+            You must fill and save the property details above before you can upload media.
           </p>
         </section>
       )}

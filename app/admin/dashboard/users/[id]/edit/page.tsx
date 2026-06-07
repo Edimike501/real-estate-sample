@@ -1,9 +1,13 @@
 import { notFound } from "next/navigation";
 
-import { UserEditForm } from "@/components/admin/UserEditForm";
+import { UserForm } from "@/components/admin/UserForm";
 import { prisma } from "@/lib/prisma";
 
-export default async function EditUserPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function EditUserPage({
+  params
+}: {
+  params: Promise<{ id: string }>;
+}) {
   const { id } = await params;
   const user = await prisma.user.findUnique({
     where: { id },
@@ -15,8 +19,8 @@ export default async function EditUserPage({ params }: { params: Promise<{ id: s
       isActive: true,
       createdBy: true,
       createdAt: true,
-      updatedAt: true,
-    },
+      updatedAt: true
+    }
   });
 
   if (!user) notFound();
@@ -24,7 +28,7 @@ export default async function EditUserPage({ params }: { params: Promise<{ id: s
   return (
     <div className="space-y-4">
       <h1 className="text-2xl font-bold text-text-primary">Edit {user.name}</h1>
-      <UserEditForm user={user} />
+      <UserForm user={user} />
     </div>
   );
 }

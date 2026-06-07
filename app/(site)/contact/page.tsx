@@ -54,64 +54,99 @@ export const metadata: Metadata = {
   }
 };
 
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "RealEstateAgent",
+  name: siteMetadata.company.name,
+  description: siteMetadata.company.description,
+  url: process.env.NEXT_PUBLIC_APP_URL,
+  telephone: siteMetadata.contact.phone,
+  email: siteMetadata.contact.email,
+  address: {
+    "@type": "PostalAddress",
+    streetAddress:
+      "A2 59/60, Agric Building Materials Complex, Abule Ado Junction",
+    addressLocality: "Lagos",
+    addressCountry: "NG"
+  },
+  sameAs: [
+    siteMetadata.contact.instagram,
+    siteMetadata.contact.facebook,
+    siteMetadata.contact.linkedin
+  ],
+  areaServed: [
+    { "@type": "Country", name: "Nigeria" },
+    { "@type": "Country", name: "United Kingdom" },
+    { "@type": "Country", name: "United States" },
+    { "@type": "Country", name: "Canada" },
+    { "@type": "Country", name: "United Arab Emirates" }
+  ]
+};
+
 export default function ContactPage() {
   const { contact } = siteMetadata;
 
   return (
-    <main className="section-padding bg-bg-primary min-h-screen">
-      <div className="max-w-6xl mx-auto">
-        <div className="max-w-3xl mb-12">
-          <h1 className="text-4xl md:text-5xl font-display font-bold text-text-primary mb-4">
-            Contact Us
-          </h1>
-          <p className="text-lg text-text-secondary">
-            Tell us what you want to buy, develop, or invest in. We will help
-            you choose the right next step.
-          </p>
-        </div>
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <main className="section-padding bg-bg-primary min-h-screen">
+        <div className="max-w-6xl mx-auto">
+          <div className="max-w-3xl mb-12">
+            <h1 className="text-4xl md:text-5xl font-display font-bold text-text-primary mb-4">
+              Contact Us
+            </h1>
+            <p className="text-lg text-text-secondary">
+              Tell us what you want to buy, develop, or invest in. We will help
+              you choose the right next step.
+            </p>
+          </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-[0.9fr_1.1fr] gap-8 items-start">
-          <aside className="bg-bg-secondary border border-border rounded-lg p-6 space-y-6">
-            <div>
-              <h2 className="text-2xl font-display font-bold text-text-primary mb-2">
-                Opollo Luxury Properties
-              </h2>
-              <p className="text-text-secondary">
-                Premium real estate development, sales, and consultancy for
-                local buyers and Nigerians in the Diaspora.
-              </p>
-            </div>
-
-            <div className="space-y-4">
-              <Link
-                href={`tel:${contact.phone}`}
-                className="flex items-start gap-3 text-text-secondary hover:text-accent transition-colors">
-                <Phone className="h-5 w-5 mt-1 text-accent" />
-                <span>{contact.phone}</span>
-              </Link>
-              <Link
-                href={`mailto:${contact.email}`}
-                className="flex items-start gap-3 text-text-secondary hover:text-accent transition-colors">
-                <Mail className="h-5 w-5 mt-1 text-accent" />
-                <span>{contact.email}</span>
-              </Link>
-              <div className="flex items-start gap-3 text-text-secondary">
-                <MapPin className="h-5 w-5 mt-1 text-accent" />
-                <span>{contact.address}</span>
+          <div className="grid grid-cols-1 lg:grid-cols-[0.9fr_1.1fr] gap-8 items-start">
+            <aside className="bg-bg-secondary border border-border rounded-lg p-6 space-y-6">
+              <div>
+                <h2 className="text-2xl font-display font-bold text-text-primary mb-2">
+                  Opollo Luxury Properties
+                </h2>
+                <p className="text-text-secondary">
+                  Premium real estate development, sales, and consultancy for
+                  local buyers and Nigerians in the Diaspora.
+                </p>
               </div>
-            </div>
 
-            <WhatsAppButton
-              phoneNumber={contact.whatsapp}
-              message={contact.whatsappMessage}
-              label="Chat on WhatsApp"
-              className="w-full"
-            />
-          </aside>
+              <div className="space-y-4">
+                <Link
+                  href={`tel:${contact.phone}`}
+                  className="flex items-start gap-3 text-text-secondary hover:text-accent transition-colors">
+                  <Phone className="h-5 w-5 mt-1 text-accent" />
+                  <span>{contact.phone}</span>
+                </Link>
+                <Link
+                  href={`mailto:${contact.email}`}
+                  className="flex items-start gap-3 text-text-secondary hover:text-accent transition-colors">
+                  <Mail className="h-5 w-5 mt-1 text-accent" />
+                  <span>{contact.email}</span>
+                </Link>
+                <div className="flex items-start gap-3 text-text-secondary">
+                  <MapPin className="h-5 w-5 mt-1 text-accent" />
+                  <span>{contact.address}</span>
+                </div>
+              </div>
 
-          <ContactForm />
+              <WhatsAppButton
+                phoneNumber={contact.whatsapp}
+                message={contact.whatsappMessage}
+                label="Chat on WhatsApp"
+                className="w-full"
+              />
+            </aside>
+
+            <ContactForm />
+          </div>
         </div>
-      </div>
-    </main>
+      </main>
+    </>
   );
 }

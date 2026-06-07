@@ -64,6 +64,9 @@ export const metadata: Metadata = {
     title: siteMetadata.company.name,
     description: siteMetadata.company.description,
     images: ["/og-image.jpg"] // ← ADD THIS (Twitter card image)
+  },
+  verification: {
+    google: "your-copied-token-goes-here"
   }
 };
 

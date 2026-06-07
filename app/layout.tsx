@@ -66,7 +66,7 @@ export const metadata: Metadata = {
     images: ["/og-image.jpg"] // ← ADD THIS (Twitter card image)
   },
   verification: {
-    google: "your-copied-token-goes-here"
+    google: "QNfT_B0u38uhJYWrXmuR5gtsGA5MO8ekvEJmoHOqvy8"
   }
 };
 
@@ -77,6 +77,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
+      {/*  <meta
+        name="google-site-verification"
+        content="QNfT_B0u38uhJYWrXmuR5gtsGA5MO8ekvEJmoHOqvy8"
+      /> */}
       <body>
         <ThemeProvider
           attribute="data-theme"

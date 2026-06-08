@@ -6,7 +6,7 @@ export const siteMetadata: SiteConfig = {
     name: "Opollo Luxury Properties",
     tagline: "Premium Luxury Real Estate for Nigeria & Diaspora",
     description:
-      "Opollo Luxury Properties Ltd specializes in premium real estate development, sales and consultancy. We serve local buyers and the Nigerian Diaspora with transparent, professional service. Expert property investment solutions in Lagos and across Nigeria.",
+      "Premium real estate development, sales & consultancy in Lagos. Expert property investment and transparent legal solutions for local and diaspora buyers.",
     founded: "2020",
     logo: "/images/opollo-luxury.png",
     owner: "Taylor Atu Goodnews"
@@ -19,7 +19,8 @@ export const siteMetadata: SiteConfig = {
       "Hi, I found your website and I'm interested in your properties.",
     email: "Opolloluxuries@gmail.com",
     phone: "+2347049785717",
-    address: "A2 59/60, Agric Building Materials Complex, Abule Ado Junction, Lagos, Nigeria",
+    address:
+      "A2 59/60, Agric Building Materials Complex, Abule Ado Junction, Lagos, Nigeria",
     instagram: "https://instagram.com/opolloluxury",
     facebook: "https://facebook.com/opolloluxury",
     linkedin: "https://linkedin.com/company/opollo-luxury-properties"

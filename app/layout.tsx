@@ -4,6 +4,7 @@ import { siteMetadata } from "@/metadata/site";
 import "leaflet/dist/leaflet.css";
 import type { Metadata } from "next";
 import { ThemeProvider } from "next-themes";
+import { headers } from "next/headers";
 import Script from "next/script";
 import "./globals.css";
 
@@ -66,20 +67,24 @@ export const metadata: Metadata = {
     images: ["/og-image.jpg"] // ← ADD THIS (Twitter card image)
   },
   verification: {
-    google: "QNfT_B0u38uhJYWrXmuR5gtsGA5MO8ekvEJmoHOqvy8"
+    google: "QNfT_B0u38uhJYWrXmuR5gtsGA5MO8ekvEJmoHOqvy8",
+    yandex: "f68f08098931ea5c"
   },
   alternates: {
     canonical: "./"
   }
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children
 }: {
   children: React.ReactNode;
 }) {
+  // Extract the unique nonce created by your middleware
+  const nonce = (await headers()).get("x-nonce") || undefined;
+
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning nonce={nonce}>
       {/*  <meta
         name="google-site-verification"
         content="QNfT_B0u38uhJYWrXmuR5gtsGA5MO8ekvEJmoHOqvy8"

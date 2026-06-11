@@ -30,7 +30,7 @@ const MapPicker = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="h-[300px] w-full animate-pulse bg-slate-900 rounded-xl flex items-center justify-center text-slate-500 text-sm border border-slate-800">
+      <div className="h-75 w-full animate-pulse bg-slate-900 rounded-xl flex items-center justify-center text-slate-500 text-sm border border-slate-800">
         Initializing Interactive Map Engine...
       </div>
     )
@@ -632,13 +632,17 @@ export function PropertyForm({ property }: PropertyFormProps) {
                         id={field.name}
                         name={field.name}
                         type="date"
-                        defaultValue={
-                          property?.[field.name as keyof Property]
-                            ? formatDateForInput(
-                                property[field.name as keyof Property]
-                              )
-                            : ""
-                        }
+                        defaultValue={(() => {
+                          const value =
+                            property?.[field.name as keyof Property];
+                          if (
+                            value &&
+                            (typeof value === "string" || value instanceof Date)
+                          ) {
+                            return formatDateForInput(value);
+                          }
+                          return "";
+                        })()}
                         className="w-full rounded-md border border-border bg-bg-primary px-3 py-2.5 text-sm text-text-primary focus:border-accent focus:outline-none"
                       />
                     </div>
@@ -995,7 +999,7 @@ export function PropertyForm({ property }: PropertyFormProps) {
                 Selected Previews Queue ({staged.length})
               </p>
               {staged.length ? (
-                <div className="max-h-[30rem] space-y-3 overflow-y-auto pr-1">
+                <div className="max-h-120 space-y-3 overflow-y-auto pr-1">
                   {staged.map((item, index) => (
                     <div
                       key={item.id}

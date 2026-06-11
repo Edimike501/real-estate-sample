@@ -3,10 +3,20 @@ import { NextResponse } from "next/server";
 
 const authMiddleware = withAuth(
   function middleware(req) {
-    // 1. Generate a unique, random cryptographic nonce for this request
+    // 1. Bypass all middleware logic for search engine crawlers
+    const userAgent = req.headers.get("user-agent") || "";
+    const isSearchBot = /googlebot|bingbot|yandexbot|duckduckbot|slurp/i.test(
+      userAgent
+    );
+
+    if (isSearchBot) {
+      return NextResponse.next();
+    }
+
+    // 2. Generate a unique cryptographic nonce for this request
     const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
 
-    // 2. Define the Content Security Policy with your external services whitelisted
+    // 3. Define the Content Security Policy
     const cspHeader = `
       default-src 'self';
 
@@ -33,34 +43,31 @@ const authMiddleware = withAuth(
       .replace(/\s{2,}/g, " ")
       .trim();
 
-    // 3. Clone request headers and inject the nonce + CSP so Next.js components can read them
+    // 4. Inject nonce + CSP into request headers so Next.js components can read them
     const requestHeaders = new Headers(req.headers);
     requestHeaders.set("x-nonce", nonce);
     requestHeaders.set("Content-Security-Policy", cspHeader);
 
-    // 4. Pass the modified headers to the application routing system
+    // 5. Forward the modified headers into the routing system
     const response = NextResponse.next({
       request: {
         headers: requestHeaders
       }
     });
 
-    // 5. Explicitly apply the CSP header to the outgoing browser response
+    // 6. Apply CSP and all security headers to the outgoing browser response
     response.headers.set("Content-Security-Policy", cspHeader);
-
-    // 6. FIXES THE ALERT: Anti-Clickjacking for legacy/all browsers
     response.headers.set("X-Frame-Options", "DENY");
-
-    // 7. BONUS FIXES: Resolves the other yellow flags in your scanner image
-    response.headers.set("X-Content-Type-Options", "nosniff"); // Fixes "X-Content-Type-Options Header Missing"
+    response.headers.set("X-Content-Type-Options", "nosniff");
     response.headers.set(
       "Strict-Transport-Security",
       "max-age=31536000; includeSubDomains; preload"
-    ); // Fixes "Strict-Transport-Security Header Not Set"
+    );
     response.headers.set(
       "Permissions-Policy",
       "camera=(), microphone=(), geolocation=()"
-    ); // Extra browser hardening
+    );
+
     return response;
   },
   {
@@ -86,16 +93,10 @@ const authMiddleware = withAuth(
 export default authMiddleware;
 export { authMiddleware as proxy };
 
-// Configuration matcher updated to cover dashboard AND app entry points to ensure CSP coverage
+// Excludes API, Next.js internals, favicon, sitemap, robots, and all static
+// public file extensions from running through the middleware entirely
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - api (API routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     */
-    "/((?!api|_next/static|_next/image|favicon.ico).*)"
+    "/((?!api|_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt|.*\\.(?:png|jpg|jpeg|gif|svg|webp|woff2|css|js)$).*)"
   ]
 };

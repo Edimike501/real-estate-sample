@@ -175,6 +175,7 @@ export interface Property {
   image?: string;
   featured?: boolean;
   whatsappMessage?: string;
+  diasporaPrice?: string;
 }
 
 export interface Inquiry {

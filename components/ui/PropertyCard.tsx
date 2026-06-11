@@ -3,6 +3,7 @@
 import { Property } from "@/types";
 import { Bath, Bed, Ruler } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import AnimatedSection from "./AnimatedSection";
 import WhatsAppButton from "./WhatsAppButton";
 
@@ -38,7 +39,9 @@ export default function PropertyCard({
     Apartment: "bg-orange-100 text-orange-700"
   };
   const statusKey = String(property.status) as keyof typeof statusColors;
-  const typeKey = String(property.type ?? property.listingType) as keyof typeof typeColors;
+  const typeKey = String(
+    property.type ?? property.listingType
+  ) as keyof typeof typeColors;
 
   return (
     <AnimatedSection>
@@ -100,12 +103,22 @@ export default function PropertyCard({
           </div>
 
           {/* CTA */}
-          <WhatsAppButton
-            phoneNumber={phoneNumber}
-            message={property.whatsappMessage ?? `Hi, I'm interested in ${property.title}.`}
-            label="Enquire Now"
-            className="w-full"
-          />
+          <div className="flex flex-col gap-2">
+            <Link
+              href={`/properties/${property.slug}`}
+              className="inline-flex w-full items-center justify-center rounded-md bg-accent px-4 py-2.5 text-sm font-semibold text-white hover:bg-accent-light transition">
+              View Property
+            </Link>
+            <WhatsAppButton
+              phoneNumber={phoneNumber}
+              message={
+                property.whatsappMessage ??
+                `Hi, I'm interested in ${property.title}.`
+              }
+              label="Enquire Now"
+              className="w-full"
+            />
+          </div>
         </div>
       </div>
     </AnimatedSection>

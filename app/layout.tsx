@@ -4,7 +4,6 @@ import { siteMetadata } from "@/metadata/site";
 import "leaflet/dist/leaflet.css";
 import type { Metadata } from "next";
 import { ThemeProvider } from "next-themes";
-import { headers } from "next/headers";
 import Script from "next/script";
 import "./globals.css";
 
@@ -81,10 +80,11 @@ export default async function RootLayout({
   children: React.ReactNode;
 }) {
   // Extract the unique nonce created by your middleware
-  const nonce = (await headers()).get("x-nonce") || undefined;
+  // const nonce = (await headers()).get("x-nonce") || undefined;
 
   return (
-    <html lang="en" suppressHydrationWarning nonce={nonce}>
+    // <html lang="en" suppressHydrationWarning nonce={nonce}>
+    <html lang="en" suppressHydrationWarning>
       {/*  <meta
         name="google-site-verification"
         content="QNfT_B0u38uhJYWrXmuR5gtsGA5MO8ekvEJmoHOqvy8"

@@ -120,7 +120,7 @@ export function PropertyDetailHero({ property }: PropertyDetailHeroProps) {
           {property.city}, {property.state}, {property.country}
         </p>
         <p className="text-2xl font-bold text-accent">
-          {getDisplayPrice(property)}
+          {property.diasporaPrice || getDisplayPrice(property)}
         </p>
       </div>
     </section>

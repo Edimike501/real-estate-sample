@@ -2,7 +2,9 @@ import Link from "next/link";
 
 import { ListingTypeBadge } from "@/components/property/ListingTypeBadge";
 import { CloudinaryImage } from "@/components/shared/cloudinary-image";
+import WhatsAppButton from "@/components/ui/WhatsAppButton";
 import { getDisplayPrice } from "@/lib/utils";
+import { siteMetadata } from "@/metadata/site";
 import { type Property } from "@/types";
 import { MediaType } from "@/types/enums";
 
@@ -11,8 +13,13 @@ type PropertyCardProps = {
   priority?: boolean;
 };
 
-export function PropertyCard({ property, priority = false }: PropertyCardProps) {
-  const firstImageMedia = property.media?.find((item) => item.mediaType === MediaType.IMAGE);
+export function PropertyCard({
+  property,
+  priority = false
+}: PropertyCardProps) {
+  const firstImageMedia = property.media?.find(
+    (item) => item.mediaType === MediaType.IMAGE
+  );
   const firstImage =
     firstImageMedia?.thumbnailUrl ||
     firstImageMedia?.url ||
@@ -45,16 +52,24 @@ export function PropertyCard({ property, priority = false }: PropertyCardProps) 
           </p>
         </div>
         <p className="text-accent text-xl font-bold">
-          {getDisplayPrice(property)}
+          {property.diasporaPrice || getDisplayPrice(property)}
         </p>
         <p className="line-clamp-2 text-sm text-text-secondary">
           {property.description}
         </p>
-        <Link
-          href={`/properties/${property.slug}`}
-          className="inline-flex rounded-md bg-accent px-4 py-2 text-sm font-semibold text-white hover:bg-accent-light">
-          View Property
-        </Link>
+        <div className="flex flex-col gap-2">
+          <Link
+            href={`/properties/${property.slug}`}
+            className="inline-flex w-full items-center justify-center rounded-md bg-accent px-4 py-2.5 text-sm font-semibold text-white hover:bg-accent-light transition">
+            View Property
+          </Link>
+          <WhatsAppButton
+            phoneNumber={siteMetadata.contact.whatsapp}
+            message={`Hi, I'm interested in ${property.title}.`}
+            label="Enquire Now"
+            className="w-full"
+          />
+        </div>
       </div>
     </article>
   );

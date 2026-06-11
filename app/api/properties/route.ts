@@ -3,6 +3,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
 import { prisma } from "@/lib/prisma";
+import { getExchangeRates, getDiasporaDisplayPrice } from "@/lib/currency";
+import type { Property } from "@/types";
 
 const propertyCreateSchema = z.object({
   slug: z.string().min(3),
@@ -15,10 +17,24 @@ const propertyCreateSchema = z.object({
   city: z.string().min(2),
   state: z.string().default("Lagos"),
   country: z.string().default("Nigeria"),
-  address: z.string().optional(),
-  landmark: z.string().optional(),
-  latitude: z.number().optional(),
-  longitude: z.number().optional()
+  address: z.string().optional().nullable(),
+  landmark: z.string().optional().nullable(),
+  latitude: z.number().optional().nullable(),
+  longitude: z.number().optional().nullable(),
+  bedrooms: z.preprocess((val) => (val === "" || val === null || val === undefined ? null : Number(val)), z.number().int().nullable().optional()),
+  bathrooms: z.preprocess((val) => (val === "" || val === null || val === undefined ? null : Number(val)), z.number().int().nullable().optional()),
+  toilets: z.preprocess((val) => (val === "" || val === null || val === undefined ? null : Number(val)), z.number().int().nullable().optional()),
+  sizeSqm: z.preprocess((val) => (val === "" || val === null || val === undefined ? null : Number(val)), z.number().nullable().optional()),
+  salePrice: z.preprocess((val) => (val === "" || val === null || val === undefined ? null : Number(val)), z.number().nullable().optional()),
+  rentalPrice: z.preprocess((val) => (val === "" || val === null || val === undefined ? null : Number(val)), z.number().nullable().optional()),
+  priceFrequency: z.enum(["ONE_OFF", "PER_MONTH", "PER_YEAR"]).nullable().optional(),
+  availableFrom: z.preprocess((val) => (val === "" || val === null || val === undefined ? null : new Date(val as string)), z.date().nullable().optional()),
+  leaseTerm: z.string().nullable().optional(),
+  serviceCharge: z.preprocess((val) => (val === "" || val === null || val === undefined ? null : Number(val)), z.number().nullable().optional()),
+  cautionFee: z.preprocess((val) => (val === "" || val === null || val === undefined ? null : Number(val)), z.number().nullable().optional()),
+  landSizeSqm: z.preprocess((val) => (val === "" || val === null || val === undefined ? null : Number(val)), z.number().nullable().optional()),
+  titleType: z.string().nullable().optional(),
+  virtualTourUrl: z.string().nullable().optional()
 });
 
 export async function GET(request: NextRequest) {
@@ -110,8 +126,14 @@ export async function GET(request: NextRequest) {
       prisma.property.count({ where })
     ]);
 
+    const rates = await getExchangeRates();
+    const propertiesWithDiaspora = properties.map((p) => ({
+      ...p,
+      diasporaPrice: getDiasporaDisplayPrice(p as unknown as Property, rates),
+    }));
+
     return NextResponse.json({
-      properties,
+      properties: propertiesWithDiaspora,
       total,
       page: currentPage,
       totalPages: Math.max(1, Math.ceil(total / perPage))
@@ -140,7 +162,19 @@ export async function POST(request: NextRequest) {
       }
     });
 
-    return NextResponse.json({ success: true, property }, { status: 201 });
+    const rates = await getExchangeRates();
+    const diasporaPrice = getDiasporaDisplayPrice(property as unknown as Property, rates);
+
+    return NextResponse.json(
+      {
+        success: true,
+        property: {
+          ...property,
+          diasporaPrice
+        }
+      },
+      { status: 201 }
+    );
   } catch (error: unknown) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(

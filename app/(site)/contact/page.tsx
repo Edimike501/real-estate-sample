@@ -69,11 +69,11 @@ const jsonLd = {
     addressLocality: "Lagos",
     addressCountry: "NG"
   },
-  sameAs: [
-    siteMetadata.contact.instagram,
-    siteMetadata.contact.facebook,
-    siteMetadata.contact.linkedin
-  ],
+  // sameAs: [
+  //   siteMetadata.contact.instagram,
+  //   siteMetadata.contact.facebook,
+  //   siteMetadata.contact.linkedin
+  // ],
   areaServed: [
     { "@type": "Country", name: "Nigeria" },
     { "@type": "Country", name: "United Kingdom" },

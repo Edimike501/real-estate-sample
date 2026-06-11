@@ -32,11 +32,11 @@ export default function HomePage() {
       latitude: "6.4594",
       longitude: "3.2292"
     },
-    sameAs: [
-      siteMetadata.contact.instagram,
-      siteMetadata.contact.facebook,
-      siteMetadata.contact.linkedin
-    ],
+    // sameAs: [
+    //   siteMetadata.contact.instagram,
+    //   siteMetadata.contact.facebook,
+    //   siteMetadata.contact.linkedin
+    // ],
     priceRange: "₦5,000,000 - ₦15,000,000+",
     aggregateRating: {
       "@type": "AggregateRating",

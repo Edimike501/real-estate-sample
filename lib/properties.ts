@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import type { Property } from "@/types";
+import { getExchangeRates, getDiasporaDisplayPrice } from "@/lib/currency";
 
 /**
  * Fetch a property by slug with all related media
@@ -7,7 +8,7 @@ import type { Property } from "@/types";
  * @returns Property with media or null if not found
  */
 export async function getPropertyBySlug(slug: string): Promise<Property | null> {
-  return prisma.property.findFirst({
+  const property = await prisma.property.findFirst({
     where: {
       slug,
       deletedAt: null,
@@ -18,6 +19,20 @@ export async function getPropertyBySlug(slug: string): Promise<Property | null> 
       },
     },
   });
+
+  if (!property) return null;
+
+  try {
+    const rates = await getExchangeRates();
+    const diasporaPrice = getDiasporaDisplayPrice(property as unknown as Property, rates);
+    return {
+      ...property,
+      diasporaPrice,
+    } as unknown as Property;
+  } catch (error) {
+    console.error("Error fetching exchange rates or formatting price in getPropertyBySlug:", error);
+    return property as unknown as Property;
+  }
 }
 
 /**

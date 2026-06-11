@@ -1,29 +1,177 @@
 "use client";
 
 import {
-    ImagePlus,
-    Loader2,
-    Trash2,
-    UploadCloud,
-    Video,
-    X
+  ImagePlus,
+  Loader2,
+  Trash2,
+  UploadCloud,
+  Video,
+  X
 } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
-    ChangeEvent,
-    DragEvent,
-    FormEvent,
-    useEffect,
-    useRef,
-    useState
+  ChangeEvent,
+  DragEvent,
+  FormEvent,
+  useEffect,
+  useRef,
+  useState
 } from "react";
 
-import { MapPicker } from "@/components/admin/MapPicker";
 import { AppSelect } from "@/components/ui/app-select";
+import { formatEnum } from "@/lib/utils";
 import { type Property, type PropertyMedia } from "@/types";
 import { ListingType, MediaType, PropertyStatus } from "@/types/enums";
-import { formatEnum } from "@/lib/utils";
+import dynamic from "next/dynamic";
+
+const MapPicker = dynamic(
+  () => import("./MapPicker").then((mod) => mod.MapPicker),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-75 w-full animate-pulse bg-slate-900 rounded-xl flex items-center justify-center text-slate-500 text-sm border border-slate-800">
+        Initializing Interactive Map Engine...
+      </div>
+    )
+  }
+);
+
+export type FormFieldDefinition = {
+  label: string;
+  name: string;
+  type: "number" | "text" | "select" | "date";
+  placeholder?: string;
+  options?: { label: string; value: string }[];
+};
+
+export const CONDITIONAL_PROPERTY_FIELDS: Record<
+  ListingType,
+  FormFieldDefinition[]
+> = {
+  SALE: [
+    {
+      label: "Sale Price (₦)",
+      name: "salePrice",
+      type: "number",
+      placeholder: "e.g. 150000000"
+    },
+    {
+      label: "Number of Bedrooms",
+      name: "bedrooms",
+      type: "number",
+      placeholder: "e.g. 4"
+    },
+    {
+      label: "Number of Bathrooms",
+      name: "bathrooms",
+      type: "number",
+      placeholder: "e.g. 5"
+    },
+    {
+      label: "Number of Toilets",
+      name: "toilets",
+      type: "number",
+      placeholder: "e.g. 5"
+    },
+    {
+      label: "Property Internal Size (Sqm)",
+      name: "sizeSqm",
+      type: "number",
+      placeholder: "e.g. 450"
+    }
+  ],
+  RENTAL: [
+    {
+      label: "Rental Price (₦)",
+      name: "rentalPrice",
+      type: "number",
+      placeholder: "e.g. 12000000"
+    },
+    {
+      label: "Price Frequency / Cycle",
+      name: "priceFrequency",
+      type: "select",
+      options: [
+        { label: "One-Off Payment", value: "ONE_OFF" },
+        { label: "Per Month", value: "PER_MONTH" },
+        { label: "Per Year / Annum", value: "PER_YEAR" }
+      ]
+    },
+    { label: "Available From Date", name: "availableFrom", type: "date" },
+    {
+      label: "Lease Duration / Terms",
+      name: "leaseTerm",
+      type: "text",
+      placeholder: "e.g. 2 Years Minimum Advance"
+    },
+    {
+      label: "Service Charge (₦)",
+      name: "serviceCharge",
+      type: "number",
+      placeholder: "e.g. 1500000"
+    },
+    {
+      label: "Caution Fee Deposit (₦)",
+      name: "cautionFee",
+      type: "number",
+      placeholder: "e.g. 500000"
+    },
+    {
+      label: "Property Internal Size (Sqm)",
+      name: "sizeSqm",
+      type: "number",
+      placeholder: "e.g. 220"
+    },
+    { label: "Number of Bedrooms", name: "bedrooms", type: "number" },
+    { label: "Number of Bathrooms", name: "bathrooms", type: "number" }
+  ],
+  LAND: [
+    {
+      label: "Land Purchase Price (₦)",
+      name: "salePrice",
+      type: "number",
+      placeholder: "e.g. 85000000"
+    },
+    {
+      label: "Total Land Size (Sqm)",
+      name: "landSizeSqm",
+      type: "number",
+      placeholder: "e.g. 600"
+    },
+    {
+      label: "Legal Land Title Type",
+      name: "titleType",
+      type: "text",
+      placeholder: "e.g. Certificate of Ownership (C of O), Governor's Consent"
+    }
+  ],
+  DEVELOPMENT: [
+    {
+      label: "Project Startup Launch Price (₦)",
+      name: "salePrice",
+      type: "number",
+      placeholder: "e.g. 210000000"
+    },
+    {
+      label: "Target Completion / Phase Timeline",
+      name: "leaseTerm",
+      type: "text",
+      placeholder: "e.g. Q4 2027 Off-Plan"
+    },
+    {
+      label: "Available Structural Typologies",
+      name: "titleType",
+      type: "text",
+      placeholder: "e.g. 4 Bed Terraces, 5 Bed Fully Detached"
+    },
+    {
+      label: "Total Expected Site Units / Sizes",
+      name: "landSizeSqm",
+      type: "number"
+    }
+  ]
+};
 
 type PropertyFormProps = {
   property?: Property;
@@ -63,6 +211,13 @@ function getDefaultAltText(file: File) {
   return file.name.replace(/\.[^/.]+$/, "").replace(/[-_]+/g, " ");
 }
 
+function formatDateForInput(dateVal: Date | string | undefined | null) {
+  if (!dateVal) return "";
+  const date = new Date(dateVal);
+  if (isNaN(date.getTime())) return "";
+  return date.toISOString().split("T")[0];
+}
+
 export function PropertyForm({ property }: PropertyFormProps) {
   const router = useRouter();
   const imageInputRef = useRef<HTMLInputElement>(null);
@@ -83,6 +238,9 @@ export function PropertyForm({ property }: PropertyFormProps) {
   );
   const [address, setAddress] = useState<string>(property?.address ?? "");
   const [landmark, setLandmark] = useState<string>(property?.landmark ?? "");
+  const [listingType, setListingType] = useState<ListingType>(
+    (property?.listingType as ListingType) ?? ListingType.SALE
+  );
   const isEditing = Boolean(property);
   const hasTourVideo =
     media.some((item) => item.mediaType === MediaType.TOUR) ||
@@ -97,13 +255,57 @@ export function PropertyForm({ property }: PropertyFormProps) {
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
-    const payload = Object.fromEntries(formData.entries()) as Record<string, unknown>;
+    const payload = Object.fromEntries(formData.entries()) as Record<
+      string,
+      unknown
+    >;
 
     // Add location data to payload
     if (latitude !== undefined) payload.latitude = latitude;
     if (longitude !== undefined) payload.longitude = longitude;
     payload.address = address;
     payload.landmark = landmark;
+
+    // Define all conditional fields we want to track
+    const allConditionalFields = [
+      "salePrice",
+      "bedrooms",
+      "bathrooms",
+      "toilets",
+      "sizeSqm",
+      "rentalPrice",
+      "priceFrequency",
+      "availableFrom",
+      "leaseTerm",
+      "serviceCharge",
+      "cautionFee",
+      "landSizeSqm",
+      "titleType"
+    ];
+
+    // Find the fields that belong to the active listing type
+    const activeFields = CONDITIONAL_PROPERTY_FIELDS[listingType].map(
+      (f) => f.name
+    );
+
+    // Clean and validate form inputs based on conditional fields
+    for (const field of allConditionalFields) {
+      if (!activeFields.includes(field)) {
+        payload[field] = null;
+      } else {
+        if (payload[field] === "" || payload[field] === undefined) {
+          payload[field] = null;
+        } else {
+          // Coerce number fields to numeric values on client side
+          const fieldDef = CONDITIONAL_PROPERTY_FIELDS[listingType].find(
+            (f) => f.name === field
+          );
+          if (fieldDef?.type === "number") {
+            payload[field] = Number(payload[field]);
+          }
+        }
+      }
+    }
 
     const response = await fetch(
       isEditing ? `/api/properties/${property?.id}` : "/api/properties",
@@ -295,11 +497,12 @@ export function PropertyForm({ property }: PropertyFormProps) {
       <form
         onSubmit={onSubmit}
         className="space-y-4 rounded-lg border border-border bg-bg-secondary p-5 shadow-sm">
-        
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           {/* Title */}
           <div className="space-y-1">
-            <label htmlFor="title" className="block text-sm font-semibold text-text-primary">
+            <label
+              htmlFor="title"
+              className="block text-sm font-semibold text-text-primary">
               Property Title
             </label>
             <input
@@ -314,7 +517,9 @@ export function PropertyForm({ property }: PropertyFormProps) {
 
           {/* Slug */}
           <div className="space-y-1">
-            <label htmlFor="slug" className="block text-sm font-semibold text-text-primary">
+            <label
+              htmlFor="slug"
+              className="block text-sm font-semibold text-text-primary">
               Slug / URL Identifier
             </label>
             <input
@@ -330,7 +535,9 @@ export function PropertyForm({ property }: PropertyFormProps) {
 
         {/* Description */}
         <div className="space-y-1">
-          <label htmlFor="description" className="block text-sm font-semibold text-text-primary">
+          <label
+            htmlFor="description"
+            className="block text-sm font-semibold text-text-primary">
             Description
           </label>
           <textarea
@@ -351,7 +558,10 @@ export function PropertyForm({ property }: PropertyFormProps) {
             </label>
             <AppSelect
               name="listingType"
-              defaultValue={String(property?.listingType ?? ListingType.SALE)}
+              value={listingType}
+              onValueChange={(value) => {
+                setListingType(value as ListingType);
+              }}
               placeholder="Listing Type"
               options={Object.values(ListingType).map((value) => ({
                 value,
@@ -367,7 +577,9 @@ export function PropertyForm({ property }: PropertyFormProps) {
             </label>
             <AppSelect
               name="status"
-              defaultValue={String(property?.status ?? PropertyStatus.AVAILABLE)}
+              defaultValue={String(
+                property?.status ?? PropertyStatus.AVAILABLE
+              )}
               placeholder="Property Status"
               options={Object.values(PropertyStatus).map((value) => ({
                 value,
@@ -377,10 +589,98 @@ export function PropertyForm({ property }: PropertyFormProps) {
           </div>
         </div>
 
+        {/* Dynamic Fields */}
+        {CONDITIONAL_PROPERTY_FIELDS[listingType] &&
+          CONDITIONAL_PROPERTY_FIELDS[listingType].length > 0 && (
+            <div
+              key={listingType}
+              className="grid grid-cols-1 gap-4 md:grid-cols-2 border-t border-border/30 pt-4 mt-2">
+              <h3 className="text-sm font-bold text-text-primary uppercase tracking-wider col-span-full mb-1">
+                {formatEnum(listingType)} Specifications
+              </h3>
+              {CONDITIONAL_PROPERTY_FIELDS[listingType].map((field) => {
+                if (field.type === "select") {
+                  return (
+                    <div key={field.name} className="space-y-1">
+                      <label className="block text-sm font-semibold text-text-primary">
+                        {field.label}
+                      </label>
+                      <AppSelect
+                        name={field.name}
+                        defaultValue={
+                          property?.[field.name as keyof Property] !== null &&
+                          property?.[field.name as keyof Property] !== undefined
+                            ? String(property[field.name as keyof Property])
+                            : ""
+                        }
+                        placeholder={field.placeholder || field.label}
+                        options={field.options || []}
+                      />
+                    </div>
+                  );
+                }
+
+                if (field.type === "date") {
+                  return (
+                    <div key={field.name} className="space-y-1">
+                      <label
+                        htmlFor={field.name}
+                        className="block text-sm font-semibold text-text-primary">
+                        {field.label}
+                      </label>
+                      <input
+                        id={field.name}
+                        name={field.name}
+                        type="date"
+                        defaultValue={(() => {
+                          const value =
+                            property?.[field.name as keyof Property];
+                          if (
+                            value &&
+                            (typeof value === "string" || value instanceof Date)
+                          ) {
+                            return formatDateForInput(value);
+                          }
+                          return "";
+                        })()}
+                        className="w-full rounded-md border border-border bg-bg-primary px-3 py-2.5 text-sm text-text-primary focus:border-accent focus:outline-none"
+                      />
+                    </div>
+                  );
+                }
+
+                return (
+                  <div key={field.name} className="space-y-1">
+                    <label
+                      htmlFor={field.name}
+                      className="block text-sm font-semibold text-text-primary">
+                      {field.label}
+                    </label>
+                    <input
+                      id={field.name}
+                      name={field.name}
+                      type={field.type}
+                      defaultValue={
+                        property?.[field.name as keyof Property] !== null &&
+                        property?.[field.name as keyof Property] !== undefined
+                          ? String(property[field.name as keyof Property])
+                          : ""
+                      }
+                      placeholder={field.placeholder}
+                      className="w-full rounded-md border border-border bg-bg-primary px-3 py-2.5 text-sm text-text-primary focus:border-accent focus:outline-none"
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           {/* City */}
           <div className="space-y-1">
-            <label htmlFor="city" className="block text-sm font-semibold text-text-primary">
+            <label
+              htmlFor="city"
+              className="block text-sm font-semibold text-text-primary">
               City
             </label>
             <input
@@ -395,7 +695,9 @@ export function PropertyForm({ property }: PropertyFormProps) {
 
           {/* State */}
           <div className="space-y-1">
-            <label htmlFor="state" className="block text-sm font-semibold text-text-primary">
+            <label
+              htmlFor="state"
+              className="block text-sm font-semibold text-text-primary">
               State
             </label>
             <input
@@ -410,7 +712,9 @@ export function PropertyForm({ property }: PropertyFormProps) {
 
           {/* Country */}
           <div className="space-y-1">
-            <label htmlFor="country" className="block text-sm font-semibold text-text-primary">
+            <label
+              htmlFor="country"
+              className="block text-sm font-semibold text-text-primary">
               Country
             </label>
             <input
@@ -490,7 +794,8 @@ export function PropertyForm({ property }: PropertyFormProps) {
             Save Property
           </button>
           {formStatus ? (
-            <p className={`text-xs font-semibold ${formStatus.includes("saved") ? "text-green-600 dark:text-green-400" : "text-red-500"}`}>
+            <p
+              className={`text-xs font-semibold ${formStatus.includes("saved") ? "text-green-600 dark:text-green-400" : "text-red-500"}`}>
               {formStatus}
             </p>
           ) : null}
@@ -502,7 +807,6 @@ export function PropertyForm({ property }: PropertyFormProps) {
         <form
           onSubmit={uploadStaged}
           className="overflow-hidden rounded-lg border border-border bg-bg-secondary shadow-sm">
-          
           {/* File Inputs (Hidden) */}
           <input
             ref={imageInputRef}
@@ -536,7 +840,8 @@ export function PropertyForm({ property }: PropertyFormProps) {
                   Property Media Manager
                 </h2>
                 <p className="text-xs text-text-muted">
-                  Attach HD images, walk-through videos, or virtual tours to this property listing.
+                  Attach HD images, walk-through videos, or virtual tours to
+                  this property listing.
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
@@ -567,7 +872,6 @@ export function PropertyForm({ property }: PropertyFormProps) {
 
           {/* Media Interactive Area */}
           <div className="grid gap-5 p-4 lg:grid-cols-2">
-            
             {/* Left: Upload and Controls */}
             <div className="space-y-4">
               {/* Drag Zone */}
@@ -596,7 +900,8 @@ export function PropertyForm({ property }: PropertyFormProps) {
                     Drag & Drop Property Images
                   </h3>
                   <p className="mt-0.5 text-xs text-white/70">
-                    Or click here to browse files. Use controls below to upload video/tours.
+                    Or click here to browse files. Use controls below to upload
+                    video/tours.
                   </p>
                 </div>
               </div>
@@ -694,7 +999,7 @@ export function PropertyForm({ property }: PropertyFormProps) {
                 Selected Previews Queue ({staged.length})
               </p>
               {staged.length ? (
-                <div className="max-h-[30rem] space-y-3 overflow-y-auto pr-1">
+                <div className="max-h-120 space-y-3 overflow-y-auto pr-1">
                   {staged.map((item, index) => (
                     <div
                       key={item.id}
@@ -718,7 +1023,8 @@ export function PropertyForm({ property }: PropertyFormProps) {
                             {index + 1}. {item.file.name}
                           </p>
                           <p className="text-[10px] text-text-muted">
-                            {getMediaLabel(item.mediaType)} / {formatFileSize(item.file.size)}
+                            {getMediaLabel(item.mediaType)} /{" "}
+                            {formatFileSize(item.file.size)}
                           </p>
                         </div>
                         <input
@@ -754,7 +1060,6 @@ export function PropertyForm({ property }: PropertyFormProps) {
                 </p>
               ) : null}
             </div>
-
           </div>
         </form>
       ) : (
@@ -763,7 +1068,8 @@ export function PropertyForm({ property }: PropertyFormProps) {
             Property Media Manager
           </h2>
           <p className="mt-1 text-xs text-text-muted">
-            You must fill and save the property details above before you can upload media.
+            You must fill and save the property details above before you can
+            upload media.
           </p>
         </section>
       )}

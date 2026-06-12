@@ -1,13 +1,22 @@
-import { notFound } from "next/navigation";
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
+
+// Dynamically import the map component and disable Server-Side Rendering
+/* const PropertyMap = dynamic(() => import("@/components/property/PropertyMap"), {
+  ssr: false,
+  loading: () => (
+    <div className="h-100 w-full bg-slate-100 animate-pulse rounded-lg" />
+  ) // Optional loading skeleton
+}); */
 
 import { InquiryForm } from "@/components/property/InquiryForm";
 import { PropertyDetailHero } from "@/components/property/PropertyDetailHero";
-import { PropertyMap } from "@/components/property/PropertyMap";
+
+import ClientPropertyMap from "@/components/property/ClientPropertyMap";
 import {
-  getPropertyBySlug,
   buildPropertyDescription,
-  optimizeCloudinaryUrl,
+  getPropertyBySlug,
+  optimizeCloudinaryUrl
 } from "@/lib/properties";
 
 type Props = {
@@ -21,17 +30,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!property) {
     return {
       title: "Property Not Found — Opollo Luxury Properties",
-      description: "The property you're looking for could not be found.",
+      description: "The property you're looking for could not be found."
     };
   }
 
   // Get first media item or fallback to default OG image
   const ogImage = property.media?.[0]?.url ?? "/og-image.jpg";
   const optimizedImage = optimizeCloudinaryUrl(ogImage);
-  
+
   // Build location string
   const location = [property.city, property.state].filter(Boolean).join(", ");
-  
+
   // Build OG description with price, specs, and location
   const ogDescription = buildPropertyDescription(property);
 
@@ -48,18 +57,18 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
           url: optimizedImage,
           width: 1200,
           height: 630,
-          alt: property.title,
-        },
+          alt: property.title
+        }
       ],
       type: "website",
-      locale: "en_NG",
+      locale: "en_NG"
     },
     twitter: {
       card: "summary_large_image",
       title: property.title,
       description: ogDescription,
-      images: [optimizedImage],
-    },
+      images: [optimizedImage]
+    }
   };
 }
 
@@ -75,10 +84,14 @@ export default async function PropertyDetailPage({ params }: Props) {
         <div className="space-y-6">
           <PropertyDetailHero property={property} />
           <section className="rounded-lg border border-border bg-bg-secondary p-6">
-            <h2 className="mb-3 text-xl font-semibold text-text-primary">Property Description</h2>
-            <p className="whitespace-pre-line text-text-secondary">{property.description}</p>
+            <h2 className="mb-3 text-xl font-semibold text-text-primary">
+              Property Description
+            </h2>
+            <p className="whitespace-pre-line text-text-secondary">
+              {property.description}
+            </p>
           </section>
-          <PropertyMap
+          <ClientPropertyMap
             latitude={property.latitude ?? null}
             longitude={property.longitude ?? null}
             address={property.address ?? null}

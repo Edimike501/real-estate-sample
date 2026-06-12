@@ -50,7 +50,7 @@ export async function getExchangeRates(): Promise<Record<string, number>> {
         await prisma.exchangeRate.upsert({
           where: { currency },
           update: { rateToNaira },
-          create: { currency, rateToNaira },
+          create: { currency, rateToNaira }
         });
       } else {
         // Fallback to cache if exists
@@ -63,7 +63,7 @@ export async function getExchangeRates(): Promise<Record<string, number>> {
             USD: 1500,
             GBP: 1900,
             EUR: 1600,
-            AED: 400,
+            AED: 400
           };
           ratesMap[currency] = defaults[currency];
         }
@@ -72,13 +72,16 @@ export async function getExchangeRates(): Promise<Record<string, number>> {
 
     return ratesMap;
   } catch (error) {
-    console.error("Error updating exchange rates, using cached/default fallback:", error);
+    console.error(
+      "Error updating exchange rates, using cached/default fallback:",
+      error
+    );
     const ratesMap: Record<string, number> = {};
     const defaults: Record<string, number> = {
       USD: 1500,
       GBP: 1900,
       EUR: 1600,
-      AED: 400,
+      AED: 400
     };
 
     for (const currency of targetCurrencies) {
@@ -89,55 +92,68 @@ export async function getExchangeRates(): Promise<Record<string, number>> {
   }
 }
 
-export function formatDiasporaPrices(nairaAmount: number, rates: Record<string, number>): string {
+export function formatDiasporaPrices(
+  nairaAmount: number,
+  rates: Record<string, number>,
+  targetCurrency?: string | null
+): string {
   const formatValue = (val: number) => {
     return new Intl.NumberFormat("en-US", {
-      maximumFractionDigits: 0,
+      maximumFractionDigits: 0
     }).format(Math.round(val));
   };
 
-  const parts: string[] = [];
-  parts.push(`₦${formatValue(nairaAmount)}`);
+  // Base Naira price string
+  const nairaString = `₦${formatValue(nairaAmount)}`;
 
+  // If a specific target currency is selected, format it in brackets
+  if (targetCurrency && rates[targetCurrency] && rates[targetCurrency] > 0) {
+    const symbols: Record<string, string> = {
+      USD: "$",
+      GBP: "£",
+      EUR: "€",
+      AED: "د.إ"
+    };
+    const symbol = symbols[targetCurrency] || targetCurrency;
+    const foreignPrice = `${symbol}${formatValue(nairaAmount / rates[targetCurrency])}`;
+
+    // Returns: ₦18,000,000 ($13,230)
+    return `${nairaString} (${foreignPrice})`;
+  }
+
+  // Fallback: If no targetCurrency is passed, default to USD in brackets
   const usdRate = rates["USD"];
   if (usdRate && usdRate > 0) {
-    parts.push(`$${formatValue(nairaAmount / usdRate)}`);
+    const usdPrice = `$${formatValue(nairaAmount / usdRate)}`;
+    return `${nairaString} (${usdPrice})`;
   }
 
-  const gbpRate = rates["GBP"];
-  if (gbpRate && gbpRate > 0) {
-    parts.push(`£${formatValue(nairaAmount / gbpRate)}`);
-  }
-
-  const eurRate = rates["EUR"];
-  if (eurRate && eurRate > 0) {
-    parts.push(`€${formatValue(nairaAmount / eurRate)}`);
-  }
-
-  const aedRate = rates["AED"];
-  if (aedRate && aedRate > 0) {
-    parts.push(`د.إ${formatValue(nairaAmount / aedRate)}`);
-  }
-
-  return parts.join(" | ");
+  // Absolute fallback if no rates are available at all
+  return nairaString;
 }
 
-export function getDiasporaDisplayPrice(property: Property, rates: Record<string, number>): string {
+export function getDiasporaDisplayPrice(
+  property: Property,
+  rates: Record<string, number>,
+  targetCurrency?: string | null
+): string {
   const baseAmount = property.salePrice || property.rentalPrice;
   if (!baseAmount) return "Contact for price";
 
-  const formattedChain = formatDiasporaPrices(baseAmount, rates);
+  const formattedChain = formatDiasporaPrices(
+    baseAmount,
+    rates,
+    targetCurrency
+  );
 
   if (property.rentalPrice && property.priceFrequency) {
-    const freq = property.priceFrequency === "PER_YEAR"
-      ? " / Year"
-      : property.priceFrequency === "PER_MONTH"
-      ? " / Month"
-      : "";
-    return formattedChain
-      .split(" | ")
-      .map((item) => `${item}${freq}`)
-      .join(" | ");
+    const freq =
+      property.priceFrequency === "PER_YEAR"
+        ? " / Year"
+        : property.priceFrequency === "PER_MONTH"
+          ? " / Month"
+          : "";
+    return `${formattedChain}${freq}`;
   }
 
   return formattedChain;

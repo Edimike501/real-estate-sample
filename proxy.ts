@@ -14,13 +14,13 @@ const authMiddleware = withAuth(
     }
 
     // 2. Generate a unique cryptographic nonce for this request
-    const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
+    // const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
 
     // 3. Define the Content Security Policy
     const cspHeader = `
       default-src 'self';
 
-      script-src 'self' 'nonce-${nonce}' 'strict-dynamic' ${
+      script-src 'self' 'unsafe-inline' ${
         process.env.NODE_ENV === "development" ? "'unsafe-eval'" : ""
       } https://www.googletagmanager.com https://www.google-analytics.com https://va.vercel-scripts.com;
 
@@ -45,7 +45,7 @@ const authMiddleware = withAuth(
 
     // 4. Inject nonce + CSP into request headers so Next.js components can read them
     const requestHeaders = new Headers(req.headers);
-    requestHeaders.set("x-nonce", nonce);
+    // requestHeaders.set("x-nonce", nonce);
     requestHeaders.set("Content-Security-Policy", cspHeader);
 
     // 5. Forward the modified headers into the routing system

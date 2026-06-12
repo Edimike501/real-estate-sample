@@ -7,6 +7,7 @@ import { getDisplayPrice } from "@/lib/utils";
 import { siteMetadata } from "@/metadata/site";
 import { type Property } from "@/types";
 import { MediaType } from "@/types/enums";
+import { Bath, Bed, Ruler } from "lucide-react";
 
 type PropertyCardProps = {
   property: Property;
@@ -57,6 +58,29 @@ export function PropertyCard({
         <p className="line-clamp-2 text-sm text-text-secondary">
           {property.description}
         </p>
+
+        {/* Features */}
+        <div className="flex flex-wrap gap-4 py-4 border-y border-border">
+          {property.bedrooms && (
+            <div className="flex items-center gap-2 text-sm text-text-secondary">
+              <Bed className="w-4 h-4" />
+              <span>{property.bedrooms} Beds</span>
+            </div>
+          )}
+          {property.bathrooms && (
+            <div className="flex items-center gap-2 text-sm text-text-secondary">
+              <Bath className="w-4 h-4" />
+              <span>{property.bathrooms} Baths</span>
+            </div>
+          )}
+          {(property.sizeSqm || property.size) && (
+            <div className="flex items-center gap-2 text-sm text-text-secondary">
+              <Ruler className="w-4 h-4" />
+              <span>{property.size || `${property.sizeSqm} sqm`}</span>
+            </div>
+          )}
+        </div>
+
         <div className="flex flex-col gap-2">
           <Link
             href={`/properties/${property.slug}`}

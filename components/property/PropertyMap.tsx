@@ -14,7 +14,7 @@ type PropertyMapProps = {
   heightClassName?: string;
 };
 
-export function PropertyMap({
+export default function PropertyMap({
   latitude,
   longitude,
   address,

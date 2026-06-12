@@ -4,11 +4,11 @@ import { Play, Video } from "lucide-react";
 import { useState } from "react";
 
 import { CloudinaryImage } from "@/components/shared/cloudinary-image";
-import { getDisplayPrice } from "@/lib/utils";
 import { type Property, type PropertyMedia } from "@/types";
 import { MediaType } from "@/types/enums";
 
 import { ListingTypeBadge } from "./ListingTypeBadge";
+import { PriceDropdown } from "./PriceDropdown";
 
 type PropertyDetailHeroProps = {
   property: Property;
@@ -119,9 +119,7 @@ export function PropertyDetailHero({ property }: PropertyDetailHeroProps) {
         <p className="text-text-secondary">
           {property.city}, {property.state}, {property.country}
         </p>
-        <p className="text-2xl font-bold text-accent">
-          {property.diasporaPrice || getDisplayPrice(property)}
-        </p>
+        <PriceDropdown property={property} />
       </div>
     </section>
   );

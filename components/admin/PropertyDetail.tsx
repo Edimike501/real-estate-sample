@@ -1,24 +1,34 @@
 import Link from "next/link";
+
+// import { PropertyMap } from "@/components/property/PropertyMap";
+// Dynamically import the map component and disable Server-Side Rendering
+/* const PropertyMap = dynamic(() => import("@/components/property/PropertyMap"), {
+  ssr: false,
+  loading: () => (
+    <div className="h-100 w-full bg-slate-100 animate-pulse rounded-lg" />
+  ) // Optional loading skeleton
+}); */
+
 import {
-  Bed,
+  ArrowLeft,
   Bath,
-  Maximize2,
-  MapPin,
+  Bed,
   Calendar,
   Compass,
-  FileText,
-  ExternalLink,
-  Edit,
   DollarSign,
-  ArrowLeft,
+  Edit,
+  ExternalLink,
+  FileText,
   Layers,
+  MapPin,
+  Maximize2
 } from "lucide-react";
 
 import { AdminDeleteButton } from "@/components/admin/AdminDeleteButton";
 import { PropertyMediaPreview } from "@/components/admin/PropertyMediaPreview";
-import { PropertyMap } from "@/components/property/PropertyMap";
-import { type Property } from "@/types";
 import { formatEnum } from "@/lib/utils";
+import { type Property } from "@/types";
+import ClientPropertyMap from "../property/ClientPropertyMap";
 
 type PropertyDetailProps = {
   property: Property;
@@ -26,19 +36,27 @@ type PropertyDetailProps = {
 
 function formatMoney(value: number | null | undefined) {
   if (!value) return null;
-  return new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN", maximumFractionDigits: 0 }).format(value);
+  return new Intl.NumberFormat("en-NG", {
+    style: "currency",
+    currency: "NGN",
+    maximumFractionDigits: 0
+  }).format(value);
 }
 
 export function PropertyDetail({ property }: PropertyDetailProps) {
   const statusBadgeStyles: Record<string, string> = {
-    AVAILABLE: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/45 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-900/50",
+    AVAILABLE:
+      "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/45 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-900/50",
     SOLD: "bg-neutral-100 text-neutral-800 dark:bg-neutral-800/40 dark:text-neutral-300 border border-neutral-200 dark:border-neutral-700/50",
     LET: "bg-purple-100 text-purple-800 dark:bg-purple-950/45 dark:text-purple-300 border border-purple-200 dark:border-purple-900/50",
-    UNDER_OFFER: "bg-amber-100 text-amber-800 dark:bg-amber-950/45 dark:text-amber-300 border border-amber-200 dark:border-amber-900/50",
-    COMING_SOON: "bg-blue-100 text-blue-800 dark:bg-blue-950/45 dark:text-blue-300 border border-blue-200 dark:border-blue-900/50",
+    UNDER_OFFER:
+      "bg-amber-100 text-amber-800 dark:bg-amber-950/45 dark:text-amber-300 border border-amber-200 dark:border-amber-900/50",
+    COMING_SOON:
+      "bg-blue-100 text-blue-800 dark:bg-blue-950/45 dark:text-blue-300 border border-blue-200 dark:border-blue-900/50"
   };
 
-  const statusClass = statusBadgeStyles[property.status] || statusBadgeStyles.AVAILABLE;
+  const statusClass =
+    statusBadgeStyles[property.status] || statusBadgeStyles.AVAILABLE;
 
   return (
     <div className="space-y-6">
@@ -46,16 +64,14 @@ export function PropertyDetail({ property }: PropertyDetailProps) {
       <div className="flex flex-wrap items-center justify-between gap-3 bg-bg-secondary border border-border p-4 rounded-lg shadow-sm">
         <Link
           href="/admin/dashboard/properties"
-          className="inline-flex items-center gap-1.5 text-xs font-semibold text-text-secondary hover:text-text-primary transition-colors"
-        >
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-text-secondary hover:text-text-primary transition-colors">
           <ArrowLeft size={14} />
           Back to Properties
         </Link>
         <div className="flex flex-wrap gap-2">
           <Link
             href={`/admin/dashboard/properties/${property.id}/edit`}
-            className="inline-flex items-center gap-1.5 rounded-md bg-accent px-4 py-2 text-xs font-semibold text-white shadow-sm hover:opacity-90 transition"
-          >
+            className="inline-flex items-center gap-1.5 rounded-md bg-accent px-4 py-2 text-xs font-semibold text-white shadow-sm hover:opacity-90 transition">
             <Edit size={14} />
             Edit Property
           </Link>
@@ -70,7 +86,6 @@ export function PropertyDetail({ property }: PropertyDetailProps) {
 
       {/* 2. Main Details Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
         {/* Left Side: Image Showcase & Description */}
         <div className="lg:col-span-2 space-y-6">
           <PropertyMediaPreview
@@ -99,7 +114,9 @@ export function PropertyDetail({ property }: PropertyDetailProps) {
             <div className="space-y-3">
               {property.salePrice && (
                 <div>
-                  <span className="text-xs text-text-muted block font-medium">Sale Price</span>
+                  <span className="text-xs text-text-muted block font-medium">
+                    Sale Price
+                  </span>
                   <span className="text-xl font-bold text-text-primary tracking-tight">
                     {formatMoney(property.salePrice)}
                   </span>
@@ -108,11 +125,15 @@ export function PropertyDetail({ property }: PropertyDetailProps) {
 
               {property.rentalPrice && (
                 <div>
-                  <span className="text-xs text-text-muted block font-medium">Rental Price</span>
+                  <span className="text-xs text-text-muted block font-medium">
+                    Rental Price
+                  </span>
                   <span className="text-xl font-bold text-text-primary tracking-tight">
                     {formatMoney(property.rentalPrice)}
                     <span className="text-xs text-text-muted font-normal ml-1">
-                      {property.priceFrequency ? `/${formatEnum(property.priceFrequency).split(" ")[1] || "Period"}` : ""}
+                      {property.priceFrequency
+                        ? `/${formatEnum(property.priceFrequency).split(" ")[1] || "Period"}`
+                        : ""}
                     </span>
                   </span>
                 </div>
@@ -161,8 +182,12 @@ export function PropertyDetail({ property }: PropertyDetailProps) {
                   <Bed size={16} />
                 </div>
                 <div>
-                  <span className="text-[10px] text-text-muted block">Bedrooms</span>
-                  <span className="font-semibold text-text-primary">{property.bedrooms ?? "-"}</span>
+                  <span className="text-[10px] text-text-muted block">
+                    Bedrooms
+                  </span>
+                  <span className="font-semibold text-text-primary">
+                    {property.bedrooms ?? "-"}
+                  </span>
                 </div>
               </div>
 
@@ -171,8 +196,12 @@ export function PropertyDetail({ property }: PropertyDetailProps) {
                   <Bath size={16} />
                 </div>
                 <div>
-                  <span className="text-[10px] text-text-muted block">Bathrooms</span>
-                  <span className="font-semibold text-text-primary">{property.bathrooms ?? "-"}</span>
+                  <span className="text-[10px] text-text-muted block">
+                    Bathrooms
+                  </span>
+                  <span className="font-semibold text-text-primary">
+                    {property.bathrooms ?? "-"}
+                  </span>
                 </div>
               </div>
 
@@ -181,7 +210,9 @@ export function PropertyDetail({ property }: PropertyDetailProps) {
                   <Maximize2 size={16} />
                 </div>
                 <div>
-                  <span className="text-[10px] text-text-muted block">Property Size</span>
+                  <span className="text-[10px] text-text-muted block">
+                    Property Size
+                  </span>
                   <span className="font-semibold text-text-primary">
                     {property.sizeSqm ? `${property.sizeSqm} sqm` : "-"}
                   </span>
@@ -193,7 +224,9 @@ export function PropertyDetail({ property }: PropertyDetailProps) {
                   <Compass size={16} />
                 </div>
                 <div>
-                  <span className="text-[10px] text-text-muted block">Land Size</span>
+                  <span className="text-[10px] text-text-muted block">
+                    Land Size
+                  </span>
                   <span className="font-semibold text-text-primary">
                     {property.landSizeSqm ? `${property.landSizeSqm} sqm` : "-"}
                   </span>
@@ -205,8 +238,12 @@ export function PropertyDetail({ property }: PropertyDetailProps) {
                   <FileText size={16} />
                 </div>
                 <div>
-                  <span className="text-[10px] text-text-muted block">Title Type</span>
-                  <span className="font-semibold text-text-primary truncate max-w-[100px]" title={property.titleType || ""}>
+                  <span className="text-[10px] text-text-muted block">
+                    Title Type
+                  </span>
+                  <span
+                    className="font-semibold text-text-primary truncate max-w-[100px]"
+                    title={property.titleType || ""}>
                     {property.titleType ?? "-"}
                   </span>
                 </div>
@@ -217,9 +254,13 @@ export function PropertyDetail({ property }: PropertyDetailProps) {
                   <Calendar size={16} />
                 </div>
                 <div>
-                  <span className="text-[10px] text-text-muted block">Listed Date</span>
+                  <span className="text-[10px] text-text-muted block">
+                    Listed Date
+                  </span>
                   <span className="font-semibold text-text-primary">
-                    {new Intl.DateTimeFormat("en", { dateStyle: "short" }).format(new Date(property.createdAt))}
+                    {new Intl.DateTimeFormat("en", {
+                      dateStyle: "short"
+                    }).format(new Date(property.createdAt))}
                   </span>
                 </div>
               </div>
@@ -236,7 +277,9 @@ export function PropertyDetail({ property }: PropertyDetailProps) {
             <div className="space-y-3 text-xs">
               {property.address && (
                 <div>
-                  <span className="text-text-muted block font-medium mb-0.5">Address</span>
+                  <span className="text-text-muted block font-medium mb-0.5">
+                    Address
+                  </span>
                   <p className="text-text-secondary leading-relaxed bg-bg-primary p-2.5 rounded border border-border">
                     {property.address}
                   </p>
@@ -244,7 +287,9 @@ export function PropertyDetail({ property }: PropertyDetailProps) {
               )}
               {property.landmark && (
                 <div>
-                  <span className="text-text-muted block font-medium mb-0.5">Landmark</span>
+                  <span className="text-text-muted block font-medium mb-0.5">
+                    Landmark
+                  </span>
                   <p className="text-text-secondary leading-relaxed bg-bg-primary p-2.5 rounded border border-border">
                     {property.landmark}
                   </p>
@@ -257,8 +302,7 @@ export function PropertyDetail({ property }: PropertyDetailProps) {
                     href={property.virtualTourUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex w-full items-center justify-center gap-1.5 rounded-md bg-accent/10 border border-accent/20 px-3 py-2.5 text-xs font-semibold text-accent hover:bg-accent/20 transition-colors"
-                  >
+                    className="inline-flex w-full items-center justify-center gap-1.5 rounded-md bg-accent/10 border border-accent/20 px-3 py-2.5 text-xs font-semibold text-accent hover:bg-accent/20 transition-colors">
                     <ExternalLink size={13} />
                     Open Virtual Tour
                   </a>
@@ -266,12 +310,10 @@ export function PropertyDetail({ property }: PropertyDetailProps) {
               )}
             </div>
           </div>
-
         </div>
-
       </div>
 
-      <PropertyMap
+      <ClientPropertyMap
         latitude={property.latitude ?? null}
         longitude={property.longitude ?? null}
         address={property.address ?? null}

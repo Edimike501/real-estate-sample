@@ -2,8 +2,8 @@ import { Prisma, PropertyStatus } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
+import { getDiasporaDisplayPrice, getExchangeRates } from "@/lib/currency";
 import { prisma } from "@/lib/prisma";
-import { getExchangeRates, getDiasporaDisplayPrice } from "@/lib/currency";
 import type { Property } from "@/types";
 
 const propertyCreateSchema = z.object({
@@ -21,18 +21,63 @@ const propertyCreateSchema = z.object({
   landmark: z.string().optional().nullable(),
   latitude: z.number().optional().nullable(),
   longitude: z.number().optional().nullable(),
-  bedrooms: z.preprocess((val) => (val === "" || val === null || val === undefined ? null : Number(val)), z.number().int().nullable().optional()),
-  bathrooms: z.preprocess((val) => (val === "" || val === null || val === undefined ? null : Number(val)), z.number().int().nullable().optional()),
-  toilets: z.preprocess((val) => (val === "" || val === null || val === undefined ? null : Number(val)), z.number().int().nullable().optional()),
-  sizeSqm: z.preprocess((val) => (val === "" || val === null || val === undefined ? null : Number(val)), z.number().nullable().optional()),
-  salePrice: z.preprocess((val) => (val === "" || val === null || val === undefined ? null : Number(val)), z.number().nullable().optional()),
-  rentalPrice: z.preprocess((val) => (val === "" || val === null || val === undefined ? null : Number(val)), z.number().nullable().optional()),
-  priceFrequency: z.enum(["ONE_OFF", "PER_MONTH", "PER_YEAR"]).nullable().optional(),
-  availableFrom: z.preprocess((val) => (val === "" || val === null || val === undefined ? null : new Date(val as string)), z.date().nullable().optional()),
+  bedrooms: z.preprocess(
+    (val) =>
+      val === "" || val === null || val === undefined ? null : Number(val),
+    z.number().int().nullable().optional()
+  ),
+  bathrooms: z.preprocess(
+    (val) =>
+      val === "" || val === null || val === undefined ? null : Number(val),
+    z.number().int().nullable().optional()
+  ),
+  toilets: z.preprocess(
+    (val) =>
+      val === "" || val === null || val === undefined ? null : Number(val),
+    z.number().int().nullable().optional()
+  ),
+  sizeSqm: z.preprocess(
+    (val) =>
+      val === "" || val === null || val === undefined ? null : Number(val),
+    z.number().nullable().optional()
+  ),
+  salePrice: z.preprocess(
+    (val) =>
+      val === "" || val === null || val === undefined ? null : Number(val),
+    z.number().nullable().optional()
+  ),
+  rentalPrice: z.preprocess(
+    (val) =>
+      val === "" || val === null || val === undefined ? null : Number(val),
+    z.number().nullable().optional()
+  ),
+  priceFrequency: z
+    .enum(["ONE_OFF", "PER_MONTH", "PER_YEAR"])
+    .nullable()
+    .optional(),
+  availableFrom: z.preprocess(
+    (val) =>
+      val === "" || val === null || val === undefined
+        ? null
+        : new Date(val as string),
+    z.date().nullable().optional()
+  ),
   leaseTerm: z.string().nullable().optional(),
-  serviceCharge: z.preprocess((val) => (val === "" || val === null || val === undefined ? null : Number(val)), z.number().nullable().optional()),
-  cautionFee: z.preprocess((val) => (val === "" || val === null || val === undefined ? null : Number(val)), z.number().nullable().optional()),
-  landSizeSqm: z.preprocess((val) => (val === "" || val === null || val === undefined ? null : Number(val)), z.number().nullable().optional()),
+  serviceCharge: z.preprocess(
+    (val) =>
+      val === "" || val === null || val === undefined ? null : Number(val),
+    z.number().nullable().optional()
+  ),
+  cautionFee: z.preprocess(
+    (val) =>
+      val === "" || val === null || val === undefined ? null : Number(val),
+    z.number().nullable().optional()
+  ),
+  landSizeSqm: z.preprocess(
+    (val) =>
+      val === "" || val === null || val === undefined ? null : Number(val),
+    z.number().nullable().optional()
+  ),
   titleType: z.string().nullable().optional(),
   virtualTourUrl: z.string().nullable().optional()
 });
@@ -127,9 +172,14 @@ export async function GET(request: NextRequest) {
     ]);
 
     const rates = await getExchangeRates();
+    const targetCurrency = searchParams.get("currency");
     const propertiesWithDiaspora = properties.map((p) => ({
       ...p,
-      diasporaPrice: getDiasporaDisplayPrice(p as unknown as Property, rates),
+      diasporaPrice: getDiasporaDisplayPrice(
+        p as unknown as Property,
+        rates,
+        targetCurrency
+      )
     }));
 
     return NextResponse.json({
@@ -163,7 +213,10 @@ export async function POST(request: NextRequest) {
     });
 
     const rates = await getExchangeRates();
-    const diasporaPrice = getDiasporaDisplayPrice(property as unknown as Property, rates);
+    const diasporaPrice = getDiasporaDisplayPrice(
+      property as unknown as Property,
+      rates
+    );
 
     return NextResponse.json(
       {

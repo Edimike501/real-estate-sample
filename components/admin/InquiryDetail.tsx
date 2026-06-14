@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useState } from "react";
 import {
   ArrowLeft,
   Calendar,
@@ -10,7 +13,9 @@ import {
   ExternalLink,
   MessageCircle,
   FileText,
-  User
+  User,
+  Copy,
+  Check
 } from "lucide-react";
 
 import { AdminDeleteButton } from "@/components/admin/AdminDeleteButton";
@@ -36,6 +41,18 @@ function formatDate(value: string | Date) {
 }
 
 export function InquiryDetail({ inquiry }: InquiryDetailProps) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(inquiry.whatsappMessage);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error("Failed to copy message:", err);
+    }
+  };
+
   const statusBadgeStyles: Record<string, string> = {
     NEW: "bg-blue-100 text-blue-800 dark:bg-blue-950/45 dark:text-blue-300 border border-blue-200 dark:border-blue-900/50",
     CONTACTED: "bg-amber-100 text-amber-800 dark:bg-amber-950/45 dark:text-amber-300 border border-amber-200 dark:border-amber-900/50",
@@ -45,6 +62,7 @@ export function InquiryDetail({ inquiry }: InquiryDetailProps) {
   };
 
   const statusClass = statusBadgeStyles[inquiry.status] || statusBadgeStyles.NEW;
+  const publicUrl = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/properties/${inquiry.property?.slug}`;
 
   return (
     <div className="space-y-6">
@@ -143,15 +161,33 @@ export function InquiryDetail({ inquiry }: InquiryDetailProps) {
 
           {/* WhatsApp Payload details */}
           <div className="rounded-lg border border-border bg-bg-secondary p-5 shadow-sm space-y-3">
-            <h3 className="text-sm font-bold uppercase tracking-wider text-text-muted border-b border-border/80 pb-2 flex items-center gap-1.5">
-              <MessageCircle size={16} className="text-emerald-600 fill-emerald-600/10" />
-              WhatsApp Message Contents
+            <h3 className="text-sm font-bold uppercase tracking-wider text-text-muted border-b border-border/80 pb-2 flex items-center justify-between gap-1.5">
+              <span className="flex items-center gap-1.5">
+                <MessageCircle size={16} className="text-emerald-600 fill-emerald-600/10" />
+                WhatsApp Message Sent
+              </span>
+              <button
+                onClick={handleCopy}
+                className="inline-flex items-center gap-1 text-xs text-accent hover:underline cursor-pointer"
+              >
+                {copied ? (
+                  <>
+                    <Check size={12} />
+                    Copied!
+                  </>
+                ) : (
+                  <>
+                    <Copy size={12} />
+                    Copy message
+                  </>
+                )}
+              </button>
             </h3>
-            <div className="bg-emerald-50/40 dark:bg-emerald-950/10 border border-emerald-100 dark:border-emerald-900/30 p-4 rounded-lg">
-              <p className="text-xs text-emerald-800 dark:text-emerald-300 font-semibold mb-2 flex items-center gap-1">
+            <div className="bg-bg-tertiary border-l-[3px] border-accent p-4 rounded-r-lg">
+              <p className="text-xs text-emerald-800 dark:text-emerald-300 font-semibold mb-2">
                 Sent to WhatsApp: {inquiry.whatsappNumber}
               </p>
-              <p className="whitespace-pre-line text-sm leading-relaxed text-text-secondary font-mono bg-bg-primary p-3.5 rounded border border-border">
+              <p className="whitespace-pre-wrap text-sm leading-relaxed text-text-secondary font-mono bg-bg-primary p-3.5 rounded border border-border">
                 {inquiry.whatsappMessage}
               </p>
             </div>
@@ -191,23 +227,32 @@ export function InquiryDetail({ inquiry }: InquiryDetailProps) {
                 Inquired Property
               </h3>
               
-              <div className="bg-bg-primary border border-border p-3.5 rounded-lg space-y-3">
+              <div className="bg-bg-primary border border-border p-3.5 rounded-lg space-y-2 flex flex-col">
                 <div>
                   <h4 className="font-bold text-sm text-text-primary leading-tight">
                     {inquiry.property.title}
                   </h4>
-                  <p className="text-xs text-text-muted mt-0.5">
+                  <p className="text-xs text-text-muted mt-0.5 font-normal">
                     {inquiry.property.city}, {inquiry.property.state}
                   </p>
                 </div>
                 
                 <Link
                   href={`/admin/dashboard/properties/${inquiry.property.id}`}
-                  className="inline-flex w-full items-center justify-center gap-1 rounded-md bg-accent px-3 py-2 text-xs font-semibold text-white hover:opacity-90 shadow-sm transition"
+                  className="inline-flex w-full items-center justify-center gap-1 rounded-md bg-accent px-3 py-2 text-xs font-semibold text-white hover:opacity-90 shadow-sm transition mt-2 text-center"
                 >
-                  <ExternalLink size={12} />
                   View Property Details
                 </Link>
+
+                <a
+                  href={publicUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex w-full items-center justify-center gap-1 rounded-md border border-accent text-accent px-3 py-2 text-xs font-semibold hover:bg-accent/5 shadow-sm transition cursor-pointer text-center"
+                >
+                  <ExternalLink size={12} />
+                  View Property
+                </a>
               </div>
             </div>
           ) : (

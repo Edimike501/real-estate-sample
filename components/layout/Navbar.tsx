@@ -2,12 +2,16 @@
 
 import ThemeToggle from "@/components/ui/ThemeToggle";
 import Logo from "@/components/ui/Logo";
-import { Menu, X } from "lucide-react";
+import { Menu, X, Bookmark } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
+import { useBookmarks } from "@/hooks/useBookmarks";
+import SavedPropertiesDrawer from "@/components/property/SavedPropertiesDrawer";
 
 export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const { count, isInitialized } = useBookmarks();
 
   const navLinks = [
     { label: "Home", href: "/" },
@@ -37,8 +41,22 @@ export default function Navbar() {
               ))}
             </div>
 
-            {/* Right side: Theme Toggle + Mobile Menu */}
+            {/* Right side: Bookmark + Theme Toggle + Mobile Menu */}
             <div className="flex items-center gap-4">
+              {/* Saved Properties Bookmark Trigger */}
+              <button
+                onClick={() => setDrawerOpen(true)}
+                className="relative p-2 rounded-lg border border-border hover:border-accent hover:bg-bg-secondary transition-colors cursor-pointer text-text-secondary hover:text-accent"
+                aria-label="View saved properties"
+              >
+                <Bookmark className="w-5 h-5" />
+                {isInitialized && count > 0 && (
+                  <span className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-accent text-[10px] font-bold text-white shadow-sm">
+                    {count}
+                  </span>
+                )}
+              </button>
+
               <ThemeToggle />
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -54,6 +72,9 @@ export default function Navbar() {
           </div>
         </div>
       </nav>
+
+      {/* Saved Properties Drawer */}
+      <SavedPropertiesDrawer isOpen={drawerOpen} onClose={() => setDrawerOpen(false)} />
 
       {/* Mobile Menu */}
       {mobileMenuOpen && (

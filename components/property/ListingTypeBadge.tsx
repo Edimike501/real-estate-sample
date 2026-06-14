@@ -5,31 +5,34 @@ type ListingTypeBadgeProps = {
   status?: PropertyStatus | `${PropertyStatus}` | "Available" | "Sold" | "Under Offer";
 };
 
-const listingTypeConfig: Record<ListingType, { label: string; className: string }> = {
-  [ListingType.SALE]: { label: "For Sale", className: "bg-yellow-100 text-yellow-800" },
-  [ListingType.RENTAL]: { label: "For Rent", className: "bg-blue-100 text-blue-800" },
-  [ListingType.LAND]: { label: "Land", className: "bg-green-100 text-green-800" },
-  [ListingType.DEVELOPMENT]: { label: "Off Plan", className: "bg-orange-100 text-orange-800" },
+export const listingTypeConfig: Record<ListingType, { label: string; className: string }> = {
+  [ListingType.SALE]: { label: "For Sale", className: "bg-accent-muted text-accent" },
+  [ListingType.RENTAL]: { label: "For Rent", className: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400" },
+  [ListingType.LAND]: { label: "Land", className: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400" },
+  [ListingType.DEVELOPMENT]: { label: "Off Plan", className: "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400" },
 };
 
-const statusConfig: Record<PropertyStatus, { label: string; className: string }> = {
-  [PropertyStatus.AVAILABLE]: { label: "Available", className: "bg-green-100 text-green-800" },
-  [PropertyStatus.SOLD]: { label: "Sold", className: "bg-red-100 text-red-800" },
-  [PropertyStatus.LET]: { label: "Let", className: "bg-red-100 text-red-800" },
-  [PropertyStatus.UNDER_OFFER]: { label: "Under Offer", className: "bg-amber-100 text-amber-800" },
-  [PropertyStatus.COMING_SOON]: { label: "Coming Soon", className: "bg-slate-100 text-slate-700" },
+export const statusConfig: Record<PropertyStatus, { label: string; className: string }> = {
+  [PropertyStatus.AVAILABLE]: { label: "AVAILABLE", className: "bg-status-available text-white" },
+  [PropertyStatus.SOLD]: { label: "SOLD", className: "bg-status-sold text-white" },
+  [PropertyStatus.LET]: { label: "LET", className: "bg-status-let text-white" },
+  [PropertyStatus.UNDER_OFFER]: { label: "UNDER OFFER", className: "bg-status-offer text-text-primary font-medium" },
+  [PropertyStatus.COMING_SOON]: { label: "COMING SOON", className: "bg-status-soon text-white" },
 };
+
+export function getNormalizedStatus(
+  status?: PropertyStatus | `${PropertyStatus}` | "Available" | "Sold" | "Under Offer" | null
+): PropertyStatus | null {
+  if (!status) return null;
+  if (status === "Available") return PropertyStatus.AVAILABLE;
+  if (status === "Sold") return PropertyStatus.SOLD;
+  if (status === "Under Offer") return PropertyStatus.UNDER_OFFER;
+  return status as PropertyStatus;
+}
 
 export function ListingTypeBadge({ listingType, status }: ListingTypeBadgeProps) {
-  const listing = listingTypeConfig[listingType];
-  const normalizedStatus =
-    status === "Available"
-      ? PropertyStatus.AVAILABLE
-      : status === "Sold"
-        ? PropertyStatus.SOLD
-        : status === "Under Offer"
-          ? PropertyStatus.UNDER_OFFER
-          : status;
+  const listing = listingTypeConfig[listingType as ListingType] || { label: listingType, className: "bg-gray-100 text-gray-800" };
+  const normalizedStatus = getNormalizedStatus(status);
   const statusStyle = normalizedStatus ? statusConfig[normalizedStatus] : null;
 
   return (

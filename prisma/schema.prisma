@@ -92,6 +92,12 @@ model Property {
   landSizeSqm       Float?
   titleType         String?
   virtualTourUrl    String?
+  duplicatedFrom    String?
+  estimatedCompletion DateTime?
+  zoningType        String?
+  furnished         Boolean?
+  petsAllowed       Boolean?
+  yearBuilt         Int?
   media             PropertyMedia[]
   inquiries         Inquiry[]
   createdAt         DateTime          @default(now())

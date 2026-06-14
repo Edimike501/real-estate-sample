@@ -6,7 +6,7 @@ import {
   NegotiationStatus,
   PriceFrequency,
   PropertyStatus,
-  UserRole,
+  UserRole
 } from "@/types/enums";
 
 /* Site Configuration */
@@ -137,7 +137,12 @@ export interface Property {
   title: string;
   description: string;
   listingType: ListingType | `${ListingType}`;
-  status: PropertyStatus | `${PropertyStatus}` | "Available" | "Sold" | "Under Offer";
+  status:
+    | PropertyStatus
+    | `${PropertyStatus}`
+    | "Available"
+    | "Sold"
+    | "Under Offer";
   negotiationStatus: NegotiationStatus | `${NegotiationStatus}`;
   isFeatured: boolean;
   isPinned: boolean;
@@ -162,11 +167,21 @@ export interface Property {
   landSizeSqm?: number | null;
   titleType?: string | null;
   virtualTourUrl?: string | null;
+  duplicatedFrom?: string | null;
+  estimatedCompletion?: string | Date | null;
+  zoningType?: string | null;
+  furnished?: boolean | null;
+  petsAllowed?: boolean | null;
+  yearBuilt?: number | null;
   createdAt: string | Date;
   updatedAt: string | Date;
   deletedAt?: string | Date | null;
   media?: PropertyMedia[];
   inquiries?: Inquiry[];
+  _count?: {
+    inquiries?: number;
+    media?: number;
+  };
   // Legacy UI compatibility fields (to be removed after full page migration)
   location?: string;
   price?: string;

@@ -1,8 +1,9 @@
 "use client";
 
-import { Edit, Eye, Trash2 } from "lucide-react";
+import { Edit, Eye, Trash2, Copy } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { useSearchParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { useDebounce } from "@/hooks/use-debounce.hooks";
@@ -10,12 +11,27 @@ import { type Property } from "@/types";
 import { formatEnum } from "@/lib/utils";
 
 export function PropertyTable() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const currentTab = searchParams.get("tab") === "archived" ? "archived" : "active";
+
   const [searchInput, setSearchInput] = useState("");
   const [properties, setProperties] = useState<Property[]>([]);
+  const [duplicatingId, setDuplicatingId] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
+
   const debouncedSearch = useDebounce(searchInput, 400);
 
+  // Auto-clear toast after 3s
+  useEffect(() => {
+    if (toast) {
+      const timer = setTimeout(() => setToast(null), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [toast]);
+
   async function deleteProperty(property: Property) {
-    const confirmed = window.confirm(`Delete "${property.title}"?`);
+    const confirmed = window.confirm(`Archive "${property.title}"?`);
     if (!confirmed) return;
 
     const response = await fetch(`/api/properties/${property.id}`, {
@@ -24,22 +40,112 @@ export function PropertyTable() {
 
     if (response.ok) {
       setProperties((current) => current.filter((item) => item.id !== property.id));
+      setToast({ message: "Property archived successfully.", type: "success" });
+    } else {
+      setToast({ message: "Failed to archive property.", type: "error" });
+    }
+  }
+
+  async function restoreProperty(property: Property) {
+    const confirmed = window.confirm(`Restore "${property.title}"?`);
+    if (!confirmed) return;
+
+    try {
+      const response = await fetch(`/api/properties/${property.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ restore: true })
+      });
+
+      if (response.ok) {
+        setProperties((current) => current.filter((item) => item.id !== property.id));
+        setToast({ message: "Property restored successfully.", type: "success" });
+      } else {
+        setToast({ message: "Failed to restore property.", type: "error" });
+      }
+    } catch (err) {
+      console.error(err);
+      setToast({ message: "An error occurred while restoring property.", type: "error" });
+    }
+  }
+
+  async function duplicateProperty(propertyId: string) {
+    setDuplicatingId(propertyId);
+    try {
+      const response = await fetch(`/api/properties/${propertyId}/duplicate`, {
+        method: "POST"
+      });
+      const data = await response.json();
+      if (response.ok && data.success && data.property) {
+        setToast({ message: "Property duplicated. Review and update details before publishing.", type: "success" });
+        router.push(`/admin/dashboard/properties/${data.property.id}/edit`);
+      } else {
+        setToast({ message: data.error || "Failed to duplicate property.", type: "error" });
+      }
+    } catch (err) {
+      console.error(err);
+      setToast({ message: "An error occurred while duplicating property.", type: "error" });
+    } finally {
+      setDuplicatingId(null);
     }
   }
 
   useEffect(() => {
     const query = new URLSearchParams();
     if (debouncedSearch) query.set("search", debouncedSearch);
+    query.set("tab", currentTab);
 
     fetch(`/api/properties?${query.toString()}`)
       .then((response) => (response.ok ? response.json() : null))
       .then((data: { properties: Property[] } | null) => {
         if (data) setProperties(data.properties);
       });
-  }, [debouncedSearch]);
+  }, [debouncedSearch, currentTab]);
+
+  const handleTabChange = (tab: "active" | "archived") => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("tab", tab);
+    router.push(`?${params.toString()}`);
+  };
 
   return (
-    <div className="space-y-4 rounded-lg border border-border bg-bg-secondary p-5 shadow-sm">
+    <div className="space-y-4 rounded-lg border border-border bg-bg-secondary p-5 shadow-sm relative">
+      {toast && (
+        <div
+          className={`fixed bottom-4 right-4 z-[9999] px-4 py-3 rounded-md shadow-lg border text-sm font-semibold transition-all duration-300 ${
+            toast.type === "success"
+              ? "bg-emerald-50 dark:bg-emerald-950 border-emerald-200 dark:border-emerald-900 text-emerald-800 dark:text-emerald-200"
+              : "bg-red-50 dark:bg-red-950 border-red-200 dark:border-red-900 text-red-800 dark:text-red-200"
+          }`}
+        >
+          {toast.message}
+        </div>
+      )}
+
+      {/* Tabs Layout */}
+      <div className="flex border-b border-border">
+        <button
+          onClick={() => handleTabChange("active")}
+          className={`px-4 py-2 text-sm font-semibold border-b-2 cursor-pointer transition-colors -mb-[2px] ${
+            currentTab === "active"
+              ? "border-accent text-accent"
+              : "border-transparent text-text-muted hover:text-text-primary"
+          }`}
+        >
+          Active Listings
+        </button>
+        <button
+          onClick={() => handleTabChange("archived")}
+          className={`px-4 py-2 text-sm font-semibold border-b-2 cursor-pointer transition-colors -mb-[2px] ${
+            currentTab === "archived"
+              ? "border-accent text-accent"
+              : "border-transparent text-text-muted hover:text-text-primary"
+          }`}
+        >
+          Archived Listings
+        </button>
+      </div>
+
       <div className="flex items-center gap-3">
         <input
           value={searchInput}
@@ -57,6 +163,7 @@ export function PropertyTable() {
               <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider text-text-muted whitespace-nowrap">Title</th>
               <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider text-text-muted whitespace-nowrap">Type</th>
               <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider text-text-muted whitespace-nowrap">Status</th>
+              <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider text-text-muted whitespace-nowrap">Inquiries</th>
               <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider text-text-muted whitespace-nowrap">City</th>
               <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider text-text-muted text-right whitespace-nowrap">Actions</th>
             </tr>
@@ -64,7 +171,12 @@ export function PropertyTable() {
           <tbody className="divide-y divide-border/80">
             {properties.length > 0 ? (
               properties.map((property) => (
-                <tr key={property.id} className="hover:bg-bg-secondary/15 transition-colors">
+                <tr
+                  key={property.id}
+                  className={`hover:bg-bg-secondary/15 transition-colors ${
+                    currentTab === "archived" ? "opacity-60" : ""
+                  }`}
+                >
                   <td className="px-4 py-3.5 whitespace-nowrap">
                     <Image
                       src={property.media?.[0]?.thumbnailUrl ?? property.media?.[0]?.url ?? "/images/property-placeholder.png"}
@@ -91,40 +203,81 @@ export function PropertyTable() {
                       {formatEnum(property.status)}
                     </span>
                   </td>
+                  <td className="px-4 py-3.5 whitespace-nowrap">
+                    {(() => {
+                      const count = property._count?.inquiries ?? 0;
+                      let badgeStyle = "bg-neutral-100 text-neutral-600 dark:bg-neutral-800/45 dark:text-neutral-300 border border-neutral-200 dark:border-neutral-700/50";
+                      if (count > 0 && count <= 5) {
+                        badgeStyle = "bg-blue-50 text-blue-700 dark:bg-blue-950/45 dark:text-blue-300 border border-blue-200 dark:border-blue-900/50";
+                      } else if (count > 5) {
+                        badgeStyle = "bg-accent text-white border border-accent";
+                      }
+                      return (
+                        <Link
+                          href={`/admin/dashboard/inquiries?propertyId=${property.id}`}
+                          className={`inline-flex items-center justify-center px-2.5 py-1 rounded-full text-xs font-bold transition hover:opacity-85 ${badgeStyle}`}
+                        >
+                          {count}
+                        </Link>
+                      );
+                    })()}
+                  </td>
                   <td className="px-4 py-3.5 text-text-secondary whitespace-nowrap">
                     {property.city}
                   </td>
                   <td className="px-4 py-3.5 whitespace-nowrap">
                     <div className="flex justify-end gap-2">
-                      <Link
-                        href={`/admin/dashboard/properties/${property.id}`}
-                        title="View property"
-                        className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-border text-text-secondary transition hover:border-accent hover:text-text-primary bg-bg-primary"
-                      >
-                        <Eye size={15} />
-                      </Link>
-                      <Link
-                        href={`/admin/dashboard/properties/${property.id}/edit`}
-                        title="Edit property"
-                        className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-border text-text-secondary transition hover:border-accent hover:text-text-primary bg-bg-primary"
-                      >
-                        <Edit size={15} />
-                      </Link>
-                      <button
-                        type="button"
-                        title="Delete property"
-                        onClick={() => void deleteProperty(property)}
-                        className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-border text-text-secondary transition hover:border-red-400 hover:text-red-500 bg-bg-primary"
-                      >
-                        <Trash2 size={15} />
-                      </button>
+                      {currentTab === "archived" ? (
+                        <button
+                          type="button"
+                          title="Restore property"
+                          onClick={() => void restoreProperty(property)}
+                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md border border-accent text-accent text-xs font-semibold hover:bg-accent/5 transition cursor-pointer"
+                        >
+                          Restore
+                        </button>
+                      ) : (
+                        <>
+                          <Link
+                            href={`/admin/dashboard/properties/${property.id}`}
+                            title="View property"
+                            className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-border text-text-secondary transition hover:border-accent hover:text-text-primary bg-bg-primary"
+                          >
+                            <Eye size={15} />
+                          </Link>
+                          <Link
+                            href={`/admin/dashboard/properties/${property.id}/edit`}
+                            title="Edit property"
+                            className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-border text-text-secondary transition hover:border-accent hover:text-text-primary bg-bg-primary"
+                          >
+                            <Edit size={15} />
+                          </Link>
+                          <button
+                            type="button"
+                            title="Duplicate property"
+                            disabled={duplicatingId === property.id}
+                            onClick={() => void duplicateProperty(property.id)}
+                            className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-border text-text-secondary transition hover:border-accent hover:text-text-primary bg-bg-primary cursor-pointer disabled:opacity-50"
+                          >
+                            <Copy size={15} />
+                          </button>
+                          <button
+                            type="button"
+                            title="Archive property"
+                            onClick={() => void deleteProperty(property)}
+                            className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-border text-text-secondary transition hover:border-red-400 hover:text-red-500 bg-bg-primary cursor-pointer"
+                          >
+                            <Trash2 size={15} />
+                          </button>
+                        </>
+                      )}
                     </div>
                   </td>
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-text-muted">
+                <td colSpan={7} className="px-4 py-8 text-center text-text-muted">
                   No properties found matching search criteria.
                 </td>
               </tr>

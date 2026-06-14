@@ -1,3 +1,4 @@
+import { JsonLd } from "@/components/seo/JsonLd";
 import ContactForm from "@/components/ui/ContactForm";
 import WhatsAppButton from "@/components/ui/WhatsAppButton";
 import { siteMetadata } from "@/metadata/site";
@@ -54,44 +55,34 @@ export const metadata: Metadata = {
   }
 };
 
-const jsonLd = {
-  "@context": "https://schema.org",
-  "@type": "RealEstateAgent",
-  name: siteMetadata.company.name,
-  description: siteMetadata.company.description,
-  url: process.env.NEXT_PUBLIC_APP_URL,
-  telephone: siteMetadata.contact.phone,
-  email: siteMetadata.contact.email,
-  address: {
-    "@type": "PostalAddress",
-    streetAddress:
-      "A2 59/60, Agric Building Materials Complex, Abule Ado Junction",
-    addressLocality: "Lagos",
-    addressCountry: "NG"
-  },
-  // sameAs: [
-  //   siteMetadata.contact.instagram,
-  //   siteMetadata.contact.facebook,
-  //   siteMetadata.contact.linkedin
-  // ],
-  areaServed: [
-    { "@type": "Country", name: "Nigeria" },
-    { "@type": "Country", name: "United Kingdom" },
-    { "@type": "Country", name: "United States" },
-    { "@type": "Country", name: "Canada" },
-    { "@type": "Country", name: "United Arab Emirates" }
-  ]
-};
-
 export default function ContactPage() {
+  const baseUrl =
+    process.env.NEXT_PUBLIC_APP_URL ?? "https://www.opolloluxuries.com";
+
+  const contactPageSchema = {
+    "@context": "https://schema.org",
+    "@type": "ContactPage",
+    url: `${baseUrl}/contact`,
+    name: "Contact Opollo Luxury Properties",
+    mainEntity: {
+      "@type": "LocalBusiness",
+      name: siteMetadata.company.name,
+      telephone: siteMetadata.contact.phone,
+      email: siteMetadata.contact.email,
+      address: {
+        "@type": "PostalAddress",
+        streetAddress:
+          "A2 59/60, Agric Building Materials Complex, Abule Ado Junction",
+        addressLocality: "Lagos",
+        addressCountry: "NG"
+      }
+    }
+  };
   const { contact } = siteMetadata;
 
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
+      <JsonLd schema={contactPageSchema} />
       <main className="section-padding bg-bg-primary min-h-screen">
         <div className="max-w-6xl mx-auto">
           <div className="max-w-3xl mb-12">

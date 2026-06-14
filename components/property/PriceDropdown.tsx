@@ -20,7 +20,7 @@ type PriceOption = {
 };
 
 export function PriceDropdown({ property }: PriceDropdownProps) {
-  const { currency, CURRENCY_SYMBOLS } = useDiasporaLocation();
+  const { currency, CURRENCY_SYMBOLS, isNigerian } = useDiasporaLocation();
   const [isOpen, setIsOpen] = useState(false);
   const [selectedCurrency, setSelectedCurrency] = useState<PriceCurrency>(
     () => {
@@ -68,6 +68,20 @@ export function PriceDropdown({ property }: PriceDropdownProps) {
       : property.priceFrequency === "PER_MONTH"
         ? "/ Month"
         : "";
+
+  // If user is Nigerian, show only NGN price (hide dropdown)
+  if (isNigerian) {
+    return (
+      <div className="flex items-baseline gap-2">
+        <span className="text-3xl font-bold text-accent">
+          {formatNGN(baseAmount)}
+        </span>
+        {frequency && (
+          <span className="text-lg text-text-secondary">{frequency}</span>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-2">

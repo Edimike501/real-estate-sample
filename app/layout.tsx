@@ -1,3 +1,4 @@
+import { JsonLd } from "@/components/seo/JsonLd";
 import { QueryProvider } from "@/components/shared/query-provider";
 import WhatsAppButton from "@/components/ui/WhatsAppButton";
 import { siteMetadata } from "@/metadata/site";
@@ -81,51 +82,32 @@ export default async function RootLayout({
 }) {
   // Extract the unique nonce created by your middleware
   // const nonce = (await headers()).get("x-nonce") || undefined;
-  const jsonLd = {
+  const baseUrl =
+    process.env.NEXT_PUBLIC_APP_URL ?? "https://www.opolloluxuries.com";
+
+  const globalOrganizationSchema = {
     "@context": "https://schema.org",
-    "@type": "RealEstateAgent",
-    name: siteMetadata.company.name,
-    description: siteMetadata.company.description,
-    url: "https://www.opolloluxuries.com",
-    logo: `https://www.opolloluxuries.com${siteMetadata.company.logo}`,
-    image: "https://www.opolloluxuries.com/og-image.jpg",
-    telephone: siteMetadata.contact.phone,
-    email: siteMetadata.contact.email,
-    foundingDate: siteMetadata.company.founded,
-    address: {
-      "@type": "PostalAddress",
-      streetAddress: siteMetadata.contact.address,
-      addressLocality: "Lagos",
-      addressCountry: "NG"
-    },
-    geo: {
-      "@type": "GeoCoordinates",
-      latitude: "6.4594",
-      longitude: "3.2292"
-    },
-    sameAs: [
-      siteMetadata.contact.instagram,
-      siteMetadata.contact.facebook,
-      siteMetadata.contact.linkedin
-    ],
-    priceRange: "₦500,000 - ₦15,000,000+",
-    aggregateRating: {
-      "@type": "AggregateRating",
-      ratingValue: "5",
-      reviewCount: siteMetadata.testimonials.items.length.toString()
-    },
-    review: siteMetadata.testimonials.items.map((t) => ({
-      "@type": "Review",
-      author: {
-        "@type": "Person",
-        name: t.name
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": `${baseUrl}/#organization`,
+        name: siteMetadata.company.name,
+        url: baseUrl,
+        logo: `${baseUrl}${siteMetadata.company.logo}`
+        // sameAs: [
+        //   siteMetadata.contact.instagram,
+        //   siteMetadata.contact.facebook,
+        //   siteMetadata.contact.linkedin
+        // ]
       },
-      reviewBody: t.text,
-      reviewRating: {
-        "@type": "Rating",
-        ratingValue: t.rating.toString()
+      {
+        "@type": "WebSite",
+        "@id": `${baseUrl}/#website`,
+        url: baseUrl,
+        name: siteMetadata.company.name,
+        publisher: { "@id": `${baseUrl}/#organization` }
       }
-    }))
+    ]
   };
 
   return (
@@ -136,12 +118,7 @@ export default async function RootLayout({
         content="QNfT_B0u38uhJYWrXmuR5gtsGA5MO8ekvEJmoHOqvy8"
       /> */}
       <head>
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify(jsonLd)
-          }}
-        />
+        <JsonLd schema={globalOrganizationSchema} />
       </head>
       <body>
         <ThemeProvider

@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 
 import { ListingTypeBadge } from "@/components/property/ListingTypeBadge";
@@ -8,6 +10,7 @@ import { siteMetadata } from "@/metadata/site";
 import { type Property } from "@/types";
 import { MediaType } from "@/types/enums";
 import { Bath, Bed, Ruler } from "lucide-react";
+import { useDiasporaLocation } from "@/hooks/useDiasporaLocation";
 
 type PropertyCardProps = {
   property: Property;
@@ -18,6 +21,7 @@ export function PropertyCard({
   property,
   priority = false
 }: PropertyCardProps) {
+  const { isNigerian } = useDiasporaLocation();
   const firstImageMedia = property.media?.find(
     (item) => item.mediaType === MediaType.IMAGE
   );
@@ -53,7 +57,9 @@ export function PropertyCard({
           </p>
         </div>
         <p className="text-accent text-xl font-bold">
-          {property.diasporaPrice || getDisplayPrice(property)}
+          {isNigerian
+            ? getDisplayPrice(property)
+            : property.diasporaPrice || getDisplayPrice(property)}
         </p>
         <p className="line-clamp-2 text-sm text-text-secondary">
           {property.description}

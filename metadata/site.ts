@@ -17,7 +17,7 @@ export const siteMetadata: SiteConfig = {
     whatsapp: "+2347049785717",
     whatsappMessage:
       "Hi, I found your website and I'm interested in your properties.",
-    email: "Opolloluxuries@gmail.com",
+    email: "opolloluxuries@gmail.com",
     phone: "+2347049785717",
     address:
       "A2 59/60, Agric Building Materials Complex, Abule Ado Junction, Lagos, Nigeria",

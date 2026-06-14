@@ -81,6 +81,52 @@ export default async function RootLayout({
 }) {
   // Extract the unique nonce created by your middleware
   // const nonce = (await headers()).get("x-nonce") || undefined;
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "RealEstateAgent",
+    name: siteMetadata.company.name,
+    description: siteMetadata.company.description,
+    url: "https://www.opolloluxuries.com",
+    logo: `https://www.opolloluxuries.com${siteMetadata.company.logo}`,
+    image: "https://www.opolloluxuries.com/og-image.jpg",
+    telephone: siteMetadata.contact.phone,
+    email: siteMetadata.contact.email,
+    foundingDate: siteMetadata.company.founded,
+    address: {
+      "@type": "PostalAddress",
+      streetAddress: siteMetadata.contact.address,
+      addressLocality: "Lagos",
+      addressCountry: "NG"
+    },
+    geo: {
+      "@type": "GeoCoordinates",
+      latitude: "6.4594",
+      longitude: "3.2292"
+    },
+    sameAs: [
+      siteMetadata.contact.instagram,
+      siteMetadata.contact.facebook,
+      siteMetadata.contact.linkedin
+    ],
+    priceRange: "₦500,000 - ₦15,000,000+",
+    aggregateRating: {
+      "@type": "AggregateRating",
+      ratingValue: "5",
+      reviewCount: siteMetadata.testimonials.items.length.toString()
+    },
+    review: siteMetadata.testimonials.items.map((t) => ({
+      "@type": "Review",
+      author: {
+        "@type": "Person",
+        name: t.name
+      },
+      reviewBody: t.text,
+      reviewRating: {
+        "@type": "Rating",
+        ratingValue: t.rating.toString()
+      }
+    }))
+  };
 
   return (
     // <html lang="en" suppressHydrationWarning nonce={nonce}>
@@ -89,6 +135,14 @@ export default async function RootLayout({
         name="google-site-verification"
         content="QNfT_B0u38uhJYWrXmuR5gtsGA5MO8ekvEJmoHOqvy8"
       /> */}
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(jsonLd)
+          }}
+        />
+      </head>
       <body>
         <ThemeProvider
           attribute="data-theme"

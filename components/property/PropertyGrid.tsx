@@ -1,13 +1,13 @@
 "use client";
 
+import { SearchX } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { useMemo } from "react";
-import { SearchX } from "lucide-react";
 
 import { useDiasporaLocation } from "@/hooks/useDiasporaLocation";
 import { useProperties } from "@/hooks/useProperties";
-import { type PropertyFilters } from "@/types";
 import { buildWhatsAppLink } from "@/lib/whatsapp";
+import { type PropertyFilters } from "@/types";
 import { InquirySource } from "@/types/enums";
 
 import { PropertyCard } from "./PropertyCard";
@@ -45,7 +45,7 @@ export function PropertyGrid() {
         {[1, 2, 3].map((n) => (
           <div
             key={n}
-            className="overflow-hidden rounded-lg border border-border bg-bg-secondary animate-pulse h-[450px]"
+            className="overflow-hidden rounded-lg border border-border bg-bg-secondary animate-pulse h-112.5"
           />
         ))}
       </div>
@@ -61,12 +61,13 @@ export function PropertyGrid() {
   }
 
   if (!data.properties.length) {
-    const waMessage = "Hi, I searched for properties on your website but couldn't find what I need. Can you help me?";
+    const waMessage =
+      "Hi, I searched for properties on your website but couldn't find what I need. Can you help me?";
     const waLink = buildWhatsAppLink({
       guestName: "",
       guestPhone: "",
       source: InquirySource.CONTACT_FORM,
-      customMessage: waMessage,
+      customMessage: waMessage
     });
 
     return (
@@ -78,15 +79,15 @@ export function PropertyGrid() {
           No properties found
         </h3>
         <p className="text-sm text-text-secondary leading-relaxed max-w-md">
-          Try adjusting your filters or search terms — or reach out to us directly
-          and we'll help you find exactly what you're looking for.
+          Try adjusting your filters or search terms — or reach out to us
+          directly and we&apos;ll help you find exactly what you&apos;re looking
+          for.
         </p>
         <a
           href={waLink}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center justify-center rounded-md bg-accent px-6 py-3 text-sm font-semibold text-white hover:bg-accent-light transition shadow-sm cursor-pointer"
-        >
+          className="inline-flex items-center justify-center rounded-md bg-accent px-6 py-3 text-sm font-semibold text-white hover:bg-accent-light transition shadow-sm cursor-pointer">
           Chat on WhatsApp
         </a>
       </div>

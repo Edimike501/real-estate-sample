@@ -25,7 +25,10 @@ export function useProperties(
     queryFn: async () => {
       const query = toQuery(filters, currency);
       const response = await fetch(
-        `/api/properties${query ? `?${query}` : ""}`
+        `/api/properties${query ? `?${query}` : ""}`,
+        {
+          next: { revalidate: 3600 } // ISR: Revalidate data every hour safely
+        }
       );
       if (!response.ok) {
         throw new Error("Failed to load properties");

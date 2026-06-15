@@ -2,10 +2,13 @@
 
 import { useSearchParams } from "next/navigation";
 import { useMemo } from "react";
+import { SearchX } from "lucide-react";
 
 import { useDiasporaLocation } from "@/hooks/useDiasporaLocation";
 import { useProperties } from "@/hooks/useProperties";
 import { type PropertyFilters } from "@/types";
+import { buildWhatsAppLink } from "@/lib/whatsapp";
+import { InquirySource } from "@/types/enums";
 
 import { PropertyCard } from "./PropertyCard";
 
@@ -38,24 +41,54 @@ export function PropertyGrid() {
 
   if (isLoading) {
     return (
-      <div className="py-10 text-center text-text-secondary">
-        Loading properties...
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {[1, 2, 3].map((n) => (
+          <div
+            key={n}
+            className="overflow-hidden rounded-lg border border-border bg-bg-secondary animate-pulse h-[450px]"
+          />
+        ))}
       </div>
     );
   }
 
   if (isError || !data) {
     return (
-      <div className="py-10 text-center text-red-600">
-        Unable to load properties.
+      <div className="py-16 text-center text-red-600 font-semibold">
+        Unable to load properties. Please try again.
       </div>
     );
   }
 
   if (!data.properties.length) {
+    const waMessage = "Hi, I searched for properties on your website but couldn't find what I need. Can you help me?";
+    const waLink = buildWhatsAppLink({
+      guestName: "",
+      guestPhone: "",
+      source: InquirySource.CONTACT_FORM,
+      customMessage: waMessage,
+    });
+
     return (
-      <div className="py-10 text-center text-text-secondary">
-        No properties found.
+      <div className="flex flex-col items-center justify-center text-center py-16 px-4 border border-border rounded-xl bg-bg-secondary/40 max-w-xl mx-auto space-y-4">
+        <div className="p-3 bg-bg-tertiary rounded-full text-text-secondary">
+          <SearchX className="w-8 h-8" />
+        </div>
+        <h3 className="text-xl font-bold text-text-primary font-display uppercase tracking-wide">
+          No properties found
+        </h3>
+        <p className="text-sm text-text-secondary leading-relaxed max-w-md">
+          Try adjusting your filters or search terms — or reach out to us directly
+          and we'll help you find exactly what you're looking for.
+        </p>
+        <a
+          href={waLink}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center justify-center rounded-md bg-accent px-6 py-3 text-sm font-semibold text-white hover:bg-accent-light transition shadow-sm cursor-pointer"
+        >
+          Chat on WhatsApp
+        </a>
       </div>
     );
   }

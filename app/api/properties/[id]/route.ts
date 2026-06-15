@@ -36,7 +36,13 @@ const updatePropertySchema = z.object({
   cautionFee: z.preprocess((val) => (val === "" || val === null || val === undefined ? null : Number(val)), z.number().nullable().optional()),
   landSizeSqm: z.preprocess((val) => (val === "" || val === null || val === undefined ? null : Number(val)), z.number().nullable().optional()),
   titleType: z.string().nullable().optional(),
-  virtualTourUrl: z.string().nullable().optional()
+  virtualTourUrl: z.string().nullable().optional(),
+  duplicatedFrom: z.string().optional().nullable(),
+  estimatedCompletion: z.preprocess((val) => (val === "" || val === null || val === undefined ? null : new Date(val as string)), z.date().nullable().optional()),
+  zoningType: z.string().optional().nullable(),
+  furnished: z.boolean().optional().nullable(),
+  petsAllowed: z.boolean().optional().nullable(),
+  yearBuilt: z.preprocess((val) => (val === "" || val === null || val === undefined ? null : Number(val)), z.number().int().nullable().optional()),
 });
 
 export async function GET(
@@ -93,6 +99,28 @@ export async function PATCH(
   try {
     const { id } = await context.params;
     const body = await request.json();
+
+    if (body.restore === true) {
+      const property = await prisma.property.update({
+        where: { id },
+        data: { deletedAt: null },
+        include: {
+          media: {
+            orderBy: { order: "asc" }
+          }
+        }
+      });
+      const rates = await getExchangeRates();
+      const diasporaPrice = getDiasporaDisplayPrice(property as unknown as Property, rates);
+      return NextResponse.json({
+        success: true,
+        property: {
+          ...property,
+          diasporaPrice
+        }
+      });
+    }
+
     const payload = updatePropertySchema.parse(body);
 
     const property = await prisma.property.update({
@@ -141,12 +169,7 @@ export async function DELETE(
   try {
     const { id } = await context.params;
     const property = await prisma.property.findFirst({
-      where: { id, deletedAt: null },
-      include: {
-        media: {
-          select: { id: true, publicId: true, mediaType: true }
-        }
-      }
+      where: { id, deletedAt: null }
     });
 
     if (!property) {
@@ -156,21 +179,12 @@ export async function DELETE(
       );
     }
 
-    await Promise.all(
-      property.media.map((media) =>
-        deletePropertyMedia(media.publicId, media.mediaType)
-      )
-    );
-
-    await prisma.$transaction([
-      prisma.propertyMedia.deleteMany({ where: { propertyId: property.id } }),
-      prisma.property.update({
-        where: { id: property.id },
-        data: {
-          deletedAt: new Date()
-        }
-      })
-    ]);
+    await prisma.property.update({
+      where: { id: property.id },
+      data: {
+        deletedAt: new Date()
+      }
+    });
 
     return NextResponse.json({ success: true });
   } catch (error: unknown) {
@@ -178,7 +192,7 @@ export async function DELETE(
       {
         success: false,
         error:
-          error instanceof Error ? error.message : "Failed to delete property."
+          error instanceof Error ? error.message : "Failed to archive property."
       },
       { status: 500 }
     );

@@ -1,3 +1,4 @@
+import { JsonLd } from "@/components/seo/JsonLd";
 import { QueryProvider } from "@/components/shared/query-provider";
 import WhatsAppButton from "@/components/ui/WhatsAppButton";
 import { siteMetadata } from "@/metadata/site";
@@ -81,6 +82,33 @@ export default async function RootLayout({
 }) {
   // Extract the unique nonce created by your middleware
   // const nonce = (await headers()).get("x-nonce") || undefined;
+  const baseUrl =
+    process.env.NEXT_PUBLIC_APP_URL ?? "https://www.opolloluxuries.com";
+
+  const globalOrganizationSchema = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": `${baseUrl}/#organization`,
+        name: siteMetadata.company.name,
+        url: baseUrl,
+        logo: `${baseUrl}${siteMetadata.company.logo}`
+        // sameAs: [
+        //   siteMetadata.contact.instagram,
+        //   siteMetadata.contact.facebook,
+        //   siteMetadata.contact.linkedin
+        // ]
+      },
+      {
+        "@type": "WebSite",
+        "@id": `${baseUrl}/#website`,
+        url: baseUrl,
+        name: siteMetadata.company.name,
+        publisher: { "@id": `${baseUrl}/#organization` }
+      }
+    ]
+  };
 
   return (
     // <html lang="en" suppressHydrationWarning nonce={nonce}>
@@ -89,6 +117,9 @@ export default async function RootLayout({
         name="google-site-verification"
         content="QNfT_B0u38uhJYWrXmuR5gtsGA5MO8ekvEJmoHOqvy8"
       /> */}
+      <head>
+        <JsonLd schema={globalOrganizationSchema} />
+      </head>
       <body>
         <ThemeProvider
           attribute="data-theme"

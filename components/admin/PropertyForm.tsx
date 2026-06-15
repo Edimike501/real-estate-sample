@@ -14,6 +14,7 @@ import {
   ChangeEvent,
   DragEvent,
   FormEvent,
+  useCallback,
   useEffect,
   useRef,
   useState
@@ -22,7 +23,13 @@ import {
 import { AppSelect } from "@/components/ui/app-select";
 import { formatEnum } from "@/lib/utils";
 import { type Property, type PropertyMedia } from "@/types";
-import { ListingType, MediaType, PropertyStatus } from "@/types/enums";
+import {
+  ListingType,
+  MediaType,
+  NegotiationStatus,
+  PriceFrequency,
+  PropertyStatus
+} from "@/types/enums";
 import dynamic from "next/dynamic";
 
 const MapPicker = dynamic(
@@ -57,6 +64,27 @@ export const CONDITIONAL_PROPERTY_FIELDS: Record<
       placeholder: "e.g. 150000000"
     },
     {
+      label: "Negotiation Status",
+      name: "negotiationStatus",
+      type: "select",
+      options: Object.values(NegotiationStatus).map((value) => ({
+        value,
+        label: formatEnum(value)
+      }))
+    },
+    {
+      label: "Title Type",
+      name: "titleType",
+      type: "text",
+      placeholder: "e.g. C of O, Deed of Assignment, Governor's Consent"
+    },
+    {
+      label: "Year Built",
+      name: "yearBuilt",
+      type: "number",
+      placeholder: "e.g. 2022"
+    },
+    {
       label: "Number of Bedrooms",
       name: "bedrooms",
       type: "number",
@@ -89,21 +117,20 @@ export const CONDITIONAL_PROPERTY_FIELDS: Record<
       placeholder: "e.g. 12000000"
     },
     {
-      label: "Price Frequency / Cycle",
+      label: "Price Frequency",
       name: "priceFrequency",
       type: "select",
-      options: [
-        { label: "One-Off Payment", value: "ONE_OFF" },
-        { label: "Per Month", value: "PER_MONTH" },
-        { label: "Per Year / Annum", value: "PER_YEAR" }
-      ]
+      options: Object.values(PriceFrequency).map((value) => ({
+        value,
+        label: formatEnum(value)
+      }))
     },
-    { label: "Available From Date", name: "availableFrom", type: "date" },
+    { label: "Available From", name: "availableFrom", type: "date" },
     {
-      label: "Lease Duration / Terms",
+      label: "Lease Term",
       name: "leaseTerm",
       type: "text",
-      placeholder: "e.g. 2 Years Minimum Advance"
+      placeholder: "e.g. 1 year minimum"
     },
     {
       label: "Service Charge (₦)",
@@ -112,10 +139,30 @@ export const CONDITIONAL_PROPERTY_FIELDS: Record<
       placeholder: "e.g. 1500000"
     },
     {
-      label: "Caution Fee Deposit (₦)",
+      label: "Caution Fee (₦)",
       name: "cautionFee",
       type: "number",
       placeholder: "e.g. 500000"
+    },
+    {
+      label: "Furnished",
+      name: "furnished",
+      type: "select",
+      options: [
+        { label: "Not specified", value: "" },
+        { label: "Furnished", value: "true" },
+        { label: "Unfurnished", value: "false" }
+      ]
+    },
+    {
+      label: "Pets Allowed",
+      name: "petsAllowed",
+      type: "select",
+      options: [
+        { label: "Not specified", value: "" },
+        { label: "Yes", value: "true" },
+        { label: "No", value: "false" }
+      ]
     },
     {
       label: "Property Internal Size (Sqm)",
@@ -128,53 +175,96 @@ export const CONDITIONAL_PROPERTY_FIELDS: Record<
   ],
   LAND: [
     {
-      label: "Land Purchase Price (₦)",
+      label: "Sale Price (₦)",
       name: "salePrice",
       type: "number",
       placeholder: "e.g. 85000000"
     },
     {
-      label: "Total Land Size (Sqm)",
+      label: "Land Size (sqm)",
       name: "landSizeSqm",
       type: "number",
       placeholder: "e.g. 600"
     },
     {
-      label: "Legal Land Title Type",
+      label: "Title Type",
       name: "titleType",
       type: "text",
-      placeholder: "e.g. Certificate of Ownership (C of O), Governor's Consent"
+      placeholder: "e.g. C of O, Deed of Assignment, Excision"
+    },
+    {
+      label: "Zoning Type",
+      name: "zoningType",
+      type: "text",
+      placeholder: "e.g. Residential, Commercial, Mixed Use"
+    },
+    {
+      label: "Negotiation Status",
+      name: "negotiationStatus",
+      type: "select",
+      options: Object.values(NegotiationStatus).map((value) => ({
+        value,
+        label: formatEnum(value)
+      }))
     }
   ],
   DEVELOPMENT: [
     {
-      label: "Project Startup Launch Price (₦)",
+      label: "Starting Price (₦)",
       name: "salePrice",
       type: "number",
       placeholder: "e.g. 210000000"
     },
     {
-      label: "Target Completion / Phase Timeline",
-      name: "leaseTerm",
-      type: "text",
-      placeholder: "e.g. Q4 2027 Off-Plan"
+      label: "Negotiation Status",
+      name: "negotiationStatus",
+      type: "select",
+      options: Object.values(NegotiationStatus).map((value) => ({
+        value,
+        label: formatEnum(value)
+      }))
     },
     {
-      label: "Available Structural Typologies",
+      label: "Estimated Completion",
+      name: "estimatedCompletion",
+      type: "date"
+    },
+    {
+      label: "Title Type",
       name: "titleType",
       type: "text",
-      placeholder: "e.g. 4 Bed Terraces, 5 Bed Fully Detached"
+      placeholder: "e.g. C of O, Governor's Consent"
     },
     {
-      label: "Total Expected Site Units / Sizes",
-      name: "landSizeSqm",
-      type: "number"
-    }
+      label: "Year Built",
+      name: "yearBuilt",
+      type: "number",
+      placeholder: "e.g. 2024 (if partially complete)"
+    },
+    {
+      label: "Property Internal Size (Sqm)",
+      name: "sizeSqm",
+      type: "number",
+      placeholder: "e.g. 450"
+    },
+    { label: "Number of Bedrooms", name: "bedrooms", type: "number" },
+    { label: "Number of Bathrooms", name: "bathrooms", type: "number" }
   ]
+};
+
+export type PropertyFormNavigationGuard = {
+  isDirty: () => boolean;
+  confirmLeave: (destination: string) => Promise<boolean>;
+};
+
+type PendingNavigation = {
+  destination: string | "back";
+  resolve?: (allowed: boolean) => void;
 };
 
 type PropertyFormProps = {
   property?: Property;
+  onRegisterNavigationGuard?: (guard: PropertyFormNavigationGuard) => void;
 };
 
 type StagedMedia = {
@@ -218,7 +308,10 @@ function formatDateForInput(dateVal: Date | string | undefined | null) {
   return date.toISOString().split("T")[0];
 }
 
-export function PropertyForm({ property }: PropertyFormProps) {
+export function PropertyForm({
+  property,
+  onRegisterNavigationGuard,
+}: PropertyFormProps) {
   const router = useRouter();
   const imageInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
@@ -245,6 +338,208 @@ export function PropertyForm({ property }: PropertyFormProps) {
   const hasTourVideo =
     media.some((item) => item.mediaType === MediaType.TOUR) ||
     staged.some((item) => item.mediaType === MediaType.TOUR);
+
+  const [isDirty, setIsDirty] = useState(false);
+  const [showBlockModal, setShowBlockModal] = useState(false);
+  const pendingNavigationRef = useRef<PendingNavigation | null>(null);
+
+  const requestNavigation = useCallback(
+    (destination: string | "back"): Promise<boolean> => {
+      if (!isDirty) return Promise.resolve(true);
+
+      return new Promise((resolve) => {
+        pendingNavigationRef.current = { destination, resolve };
+        setShowBlockModal(true);
+      });
+    },
+    [isDirty]
+  );
+
+  const confirmLeave = useCallback(
+    (destination: string) => requestNavigation(destination),
+    [requestNavigation]
+  );
+
+  useEffect(() => {
+    onRegisterNavigationGuard?.({
+      isDirty: () => isDirty,
+      confirmLeave,
+    });
+  }, [confirmLeave, isDirty, onRegisterNavigationGuard]);
+
+  // Store initial values to compare against
+  const initialDataRef = useRef({
+    address: property?.address ?? "",
+    landmark: property?.landmark ?? "",
+    latitude: property?.latitude ?? undefined,
+    longitude: property?.longitude ?? undefined,
+    listingType: (property?.listingType as ListingType) ?? ListingType.SALE,
+    // Store initial form field values from property
+    title: property?.title ?? "",
+    slug: property?.slug ?? "",
+    description: property?.description ?? "",
+    city: property?.city ?? "",
+    state: property?.state ?? "Lagos",
+    country: property?.country ?? "Nigeria",
+    status: String(property?.status ?? "AVAILABLE"),
+    // Store initial conditional field values (using any for type flexibility)
+    salePrice: property?.salePrice,
+    bedrooms: property?.bedrooms,
+    bathrooms: property?.bathrooms,
+    toilets: property?.toilets,
+    sizeSqm: property?.sizeSqm,
+    rentalPrice: property?.rentalPrice,
+    priceFrequency: property?.priceFrequency,
+    availableFrom: property?.availableFrom,
+    leaseTerm: property?.leaseTerm,
+    serviceCharge: property?.serviceCharge,
+    cautionFee: property?.cautionFee,
+    landSizeSqm: property?.landSizeSqm,
+    titleType: property?.titleType,
+    negotiationStatus: property?.negotiationStatus,
+    yearBuilt: property?.yearBuilt,
+    furnished: property?.furnished,
+    petsAllowed: property?.petsAllowed,
+    estimatedCompletion: property?.estimatedCompletion,
+    zoningType: property?.zoningType
+  });
+
+  // Check if form values have changed from initial
+  const checkIfDirty = (formData?: FormData) => {
+    const current = {
+      address,
+      landmark,
+      latitude,
+      longitude,
+      listingType
+    };
+
+    const hasStateChanged =
+      current.address !== initialDataRef.current.address ||
+      current.landmark !== initialDataRef.current.landmark ||
+      current.latitude !== initialDataRef.current.latitude ||
+      current.longitude !== initialDataRef.current.longitude ||
+      current.listingType !== initialDataRef.current.listingType;
+
+    if (hasStateChanged) return true;
+
+    // If formData is provided, check form fields
+    if (formData) {
+      const title = formData.get("title") as string;
+      const slug = formData.get("slug") as string;
+      const description = formData.get("description") as string;
+      const city = formData.get("city") as string;
+      const state = formData.get("state") as string;
+      const country = formData.get("country") as string;
+      const status = formData.get("status") as string;
+
+      if (title !== initialDataRef.current.title) return true;
+      if (slug !== initialDataRef.current.slug) return true;
+      if (description !== initialDataRef.current.description) return true;
+      if (city !== initialDataRef.current.city) return true;
+      if (state !== initialDataRef.current.state) return true;
+      if (country !== initialDataRef.current.country) return true;
+      if (status !== initialDataRef.current.status) return true;
+
+      // Check conditional fields
+      const conditionalFields = [
+        "salePrice",
+        "bedrooms",
+        "bathrooms",
+        "toilets",
+        "sizeSqm",
+        "rentalPrice",
+        "priceFrequency",
+        "availableFrom",
+        "leaseTerm",
+        "serviceCharge",
+        "cautionFee",
+        "landSizeSqm",
+        "titleType",
+        "negotiationStatus",
+        "yearBuilt",
+        "furnished",
+        "petsAllowed",
+        "estimatedCompletion",
+        "zoningType"
+      ];
+
+      for (const field of conditionalFields) {
+        const currentValue = formData.get(field);
+        const initialValue =
+          initialDataRef.current[field as keyof typeof initialDataRef.current];
+
+        // Handle null/undefined/empty string comparisons
+        if (currentValue === "" || currentValue === null) {
+          if (
+            initialValue !== null &&
+            initialValue !== undefined &&
+            initialValue !== ""
+          ) {
+            return true;
+          }
+        } else if (String(currentValue) !== String(initialValue ?? "")) {
+          return true;
+        }
+      }
+    }
+
+    return false;
+  };
+
+  // 1. Browser navigation (close tab, refresh, external links)
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (isDirty) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [isDirty]);
+
+  // 2. In-app navigation & Popstate (back button)
+  useEffect(() => {
+    if (!isDirty) return;
+
+    const handleAnchorClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      const anchor = target.closest("a");
+
+      if (anchor) {
+        const href = anchor.getAttribute("href");
+        const targetAttr = anchor.getAttribute("target");
+        if (
+          href &&
+          targetAttr !== "_blank" &&
+          (href.startsWith("/") || href.startsWith(window.location.origin))
+        ) {
+          e.preventDefault();
+          pendingNavigationRef.current = { destination: href };
+          setShowBlockModal(true);
+        }
+      }
+    };
+
+    const handlePopState = () => {
+      window.history.pushState(null, "", window.location.href);
+      pendingNavigationRef.current = { destination: "back" };
+      setShowBlockModal(true);
+    };
+
+    window.history.pushState(null, "", window.location.href);
+
+    document.addEventListener("click", handleAnchorClick, true);
+    window.addEventListener("popstate", handlePopState);
+
+    return () => {
+      document.removeEventListener("click", handleAnchorClick, true);
+      window.removeEventListener("popstate", handlePopState);
+    };
+  }, [isDirty]);
 
   useEffect(() => {
     return () => {
@@ -322,6 +617,55 @@ export function PropertyForm({ property }: PropertyFormProps) {
     } | null;
 
     if (response.ok) {
+      // Update initial data ref to reflect the new saved values
+      // Update initial data ref to reflect the new saved values
+      initialDataRef.current = {
+        address,
+        landmark,
+        latitude,
+        longitude,
+        listingType,
+        title: payload.title as string,
+        slug: payload.slug as string,
+        description: payload.description as string,
+        city: payload.city as string,
+        state: payload.state as string,
+        country: payload.country as string,
+        status: payload.status as string,
+        salePrice: payload.salePrice as number | null | undefined,
+        bedrooms: payload.bedrooms as number | null | undefined,
+        bathrooms: payload.bathrooms as number | null | undefined,
+        toilets: payload.toilets as number | null | undefined,
+        sizeSqm: payload.sizeSqm as number | null | undefined,
+        rentalPrice: payload.rentalPrice as number | null | undefined,
+        priceFrequency: payload.priceFrequency as
+          | PriceFrequency
+          | null
+          | undefined,
+        availableFrom: payload.availableFrom as
+          | Date
+          | string
+          | null
+          | undefined,
+        leaseTerm: payload.leaseTerm as string | null | undefined,
+        serviceCharge: payload.serviceCharge as number | null | undefined,
+        cautionFee: payload.cautionFee as number | null | undefined,
+        landSizeSqm: payload.landSizeSqm as number | null | undefined,
+        titleType: payload.titleType as string | null | undefined,
+        negotiationStatus: payload.negotiationStatus as
+          | NegotiationStatus
+          | undefined,
+        yearBuilt: payload.yearBuilt as number | null | undefined,
+        furnished: payload.furnished as boolean | null | undefined,
+        petsAllowed: payload.petsAllowed as boolean | null | undefined,
+        estimatedCompletion: payload.estimatedCompletion as
+          | Date
+          | string
+          | null
+          | undefined,
+        zoningType: payload.zoningType as string | null | undefined
+      };
+      setIsDirty(false);
       setFormStatus(
         isEditing
           ? "Property saved."
@@ -496,6 +840,7 @@ export function PropertyForm({ property }: PropertyFormProps) {
       {/* 1. Property Form */}
       <form
         onSubmit={onSubmit}
+        onChange={() => setIsDirty(true)}
         className="space-y-4 rounded-lg border border-border bg-bg-secondary p-5 shadow-sm">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           {/* Title */}
@@ -744,7 +1089,10 @@ export function PropertyForm({ property }: PropertyFormProps) {
               <input
                 id="address"
                 value={address}
-                onChange={(e) => setAddress(e.target.value)}
+                onChange={(e) => {
+                  setAddress(e.target.value);
+                  setIsDirty(true);
+                }}
                 placeholder="e.g., 123 Main Street, Victoria Island"
                 className="w-full rounded-md border border-border bg-bg-secondary px-3 py-2.5 text-sm text-text-primary focus:border-accent focus:outline-none"
               />
@@ -759,7 +1107,10 @@ export function PropertyForm({ property }: PropertyFormProps) {
               <input
                 id="landmark"
                 value={landmark}
-                onChange={(e) => setLandmark(e.target.value)}
+                onChange={(e) => {
+                  setLandmark(e.target.value);
+                  setIsDirty(true);
+                }}
                 placeholder="e.g., Near Lekki Phase 1 Gate"
                 className="w-full rounded-md border border-border bg-bg-secondary px-3 py-2.5 text-sm text-text-primary focus:border-accent focus:outline-none"
               />
@@ -777,6 +1128,7 @@ export function PropertyForm({ property }: PropertyFormProps) {
                 onLocationChange={(lat, lng, reverseGeocodedAddress) => {
                   setLatitude(lat);
                   setLongitude(lng);
+                  setIsDirty(true);
                   if (!address && reverseGeocodedAddress) {
                     setAddress(reverseGeocodedAddress);
                   }
@@ -1072,6 +1424,52 @@ export function PropertyForm({ property }: PropertyFormProps) {
             upload media.
           </p>
         </section>
+      )}
+
+      {showBlockModal && (
+        <div className="fixed inset-0 z-10000 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-fade-in">
+          <div className="w-full max-w-md bg-bg-secondary border border-border rounded-lg p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-200 text-left">
+            <h3 className="text-lg font-bold text-text-primary font-display">
+              Leave without saving?
+            </h3>
+            <p className="text-sm text-text-secondary">
+              You have unsaved changes. If you leave now, your changes will be
+              lost.
+            </p>
+            <div className="flex justify-end gap-3 pt-2">
+              <button
+                onClick={() => {
+                  pendingNavigationRef.current?.resolve?.(false);
+                  pendingNavigationRef.current = null;
+                  setShowBlockModal(false);
+                }}
+                className="px-4 py-2 text-xs font-semibold text-text-secondary border border-border rounded-md hover:bg-bg-primary transition cursor-pointer">
+                Stay on page
+              </button>
+              <button
+                onClick={() => {
+                  const pending = pendingNavigationRef.current;
+                  pendingNavigationRef.current = null;
+                  setIsDirty(false);
+                  setShowBlockModal(false);
+
+                  if (pending?.resolve) {
+                    pending.resolve(true);
+                    return;
+                  }
+
+                  if (pending?.destination === "back") {
+                    router.back();
+                  } else if (pending?.destination) {
+                    router.push(pending.destination);
+                  }
+                }}
+                className="px-4 py-2 text-xs font-semibold text-white bg-accent rounded-md hover:opacity-90 transition cursor-pointer">
+                Leave anyway
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

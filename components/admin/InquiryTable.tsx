@@ -1,7 +1,8 @@
 "use client";
 
-import { Edit, Eye, Trash2 } from "lucide-react";
+import { Edit, Eye, Trash2, X } from "lucide-react";
 import Link from "next/link";
+import { useSearchParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { AppSelect } from "@/components/ui/app-select";
@@ -11,47 +12,42 @@ import { type Inquiry } from "@/types";
 import { InquiryStatus } from "@/types/enums";
 
 export function InquiryTable() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const urlPropertyId = searchParams.get("propertyId") || "";
+
   const [searchInput, setSearchInput] = useState("");
   const [inquiries, setInquiries] = useState<Inquiry[]>([]);
+  const [properties, setProperties] = useState<{ id: string; title: string }[]>([]);
+  const [selectedPropertyId, setSelectedPropertyId] = useState<string>(urlPropertyId);
+  const [updatingIds, setUpdatingIds] = useState<Record<string, boolean>>({});
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
+
   const debouncedSearch = useDebounce(searchInput, 400);
 
-  async function deleteInquiry(inquiry: Inquiry) {
-    const confirmed = window.confirm(
-      `Delete inquiry from "${inquiry.guestName}"?`
-    );
-    if (!confirmed) return;
-
-    const response = await fetch(`/api/inquiries/${inquiry.id}`, {
-      method: "DELETE"
-    });
-
-    if (response.ok) {
-      setInquiries((current) =>
-        current.filter((item) => item.id !== inquiry.id)
-      );
-    }
-  }
-
-  async function updateStatus(inquiry: Inquiry, newStatus: string) {
-    const response = await fetch(`/api/inquiries/${inquiry.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status: newStatus })
-    });
-
-    if (response.ok) {
-      setInquiries((current) =>
-        current.map((item) =>
-          item.id === inquiry.id
-            ? { ...item, status: newStatus as InquiryStatus }
-            : item
-        )
-      );
-    }
-  }
-
+  // Sync state with URL propertyId
   useEffect(() => {
-    fetch("/api/inquiries")
+    setSelectedPropertyId(urlPropertyId);
+  }, [urlPropertyId]);
+
+  // Fetch properties for the filter dropdown
+  useEffect(() => {
+    fetch("/api/properties?select=id,title")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data: { properties: { id: string; title: string }[] } | null) => {
+        if (data?.properties) {
+          setProperties(data.properties);
+        }
+      });
+  }, []);
+
+  // Fetch inquiries based on search and property filter
+  useEffect(() => {
+    const url = selectedPropertyId
+      ? `/api/inquiries?propertyId=${selectedPropertyId}`
+      : "/api/inquiries";
+
+    fetch(url)
       .then((response) => (response.ok ? response.json() : null))
       .then((data: { inquiries: Inquiry[] } | null) => {
         if (!data) return;
@@ -68,17 +64,125 @@ export function InquiryTable() {
         });
         setInquiries(items);
       });
-  }, [debouncedSearch]);
+  }, [debouncedSearch, selectedPropertyId]);
+
+  // Auto-clear toast after 3s
+  useEffect(() => {
+    if (toast) {
+      const timer = setTimeout(() => setToast(null), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [toast]);
+
+  async function deleteInquiry(inquiry: Inquiry) {
+    const confirmed = window.confirm(
+      `Delete inquiry from "${inquiry.guestName}"?`
+    );
+    if (!confirmed) return;
+
+    const response = await fetch(`/api/inquiries/${inquiry.id}`, {
+      method: "DELETE"
+    });
+
+    if (response.ok) {
+      setInquiries((current) =>
+        current.filter((item) => item.id !== inquiry.id)
+      );
+      setToast({ message: "Inquiry deleted successfully", type: "success" });
+    } else {
+      setToast({ message: "Failed to delete inquiry", type: "error" });
+    }
+  }
+
+  async function updateStatus(inquiry: Inquiry, newStatus: string) {
+    const originalStatus = inquiry.status;
+
+    // Optimistically update UI
+    setInquiries((current) =>
+      current.map((item) =>
+        item.id === inquiry.id
+          ? { ...item, status: newStatus as InquiryStatus }
+          : item
+      )
+    );
+    setUpdatingIds((prev) => ({ ...prev, [inquiry.id]: true }));
+
+    try {
+      const response = await fetch(`/api/inquiries/${inquiry.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: inquiry.id, status: newStatus })
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to update status");
+      }
+      setToast({ message: "Inquiry status updated", type: "success" });
+    } catch (err) {
+      console.error(err);
+      // Revert status on error
+      setInquiries((current) =>
+        current.map((item) =>
+          item.id === inquiry.id
+            ? { ...item, status: originalStatus }
+            : item
+        )
+      );
+      setToast({ message: "Failed to update status. Reverted.", type: "error" });
+    } finally {
+      setUpdatingIds((prev) => ({ ...prev, [inquiry.id]: false }));
+    }
+  }
+
+  const handlePropertyChange = (propertyId: string) => {
+    setSelectedPropertyId(propertyId);
+    const params = new URLSearchParams(searchParams.toString());
+    if (propertyId) {
+      params.set("propertyId", propertyId);
+    } else {
+      params.delete("propertyId");
+    }
+    router.push(`?${params.toString()}`);
+  };
 
   return (
-    <div className="space-y-4 rounded-lg border border-border bg-bg-secondary p-5 shadow-sm">
-      <div className="flex items-center gap-3">
+    <div className="space-y-4 rounded-lg border border-border bg-bg-secondary p-5 shadow-sm relative">
+      {toast && (
+        <div
+          className={`fixed bottom-4 right-4 z-[9999] px-4 py-3 rounded-md shadow-lg border text-sm font-semibold transition-all duration-300 ${
+            toast.type === "success"
+              ? "bg-emerald-50 dark:bg-emerald-950 border-emerald-200 dark:border-emerald-900 text-emerald-800 dark:text-emerald-200"
+              : "bg-red-50 dark:bg-red-950 border-red-200 dark:border-red-900 text-red-800 dark:text-red-200"
+          }`}
+        >
+          {toast.message}
+        </div>
+      )}
+
+      <div className="flex flex-wrap items-center gap-3">
         <input
           value={searchInput}
           onChange={(event) => setSearchInput(event.target.value)}
           placeholder="Search inquiries by guest name or phone..."
-          className="w-full rounded-md border border-border bg-bg-primary px-3 py-2.5 text-sm text-text-primary focus:border-accent focus:outline-none"
+          className="flex-1 min-w-[200px] rounded-md border border-border bg-bg-primary px-3 py-2.5 text-sm text-text-primary focus:border-accent focus:outline-none"
         />
+        <div className="w-64 flex items-center gap-1.5">
+          <AppSelect
+            value={selectedPropertyId}
+            placeholder="Filter by Property"
+            options={properties.map((p) => ({ value: p.id, label: p.title }))}
+            onValueChange={handlePropertyChange}
+          />
+          {selectedPropertyId && (
+            <button
+              onClick={() => handlePropertyChange("")}
+              className="p-2 border border-border rounded-md text-text-muted hover:text-text-primary hover:border-accent bg-bg-primary cursor-pointer"
+              title="Clear property filter"
+            >
+              <X size={16} />
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="w-full overflow-x-auto rounded-md border border-border/80 bg-bg-primary">
@@ -90,6 +194,9 @@ export function InquiryTable() {
               </th>
               <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider text-text-muted whitespace-nowrap">
                 Phone
+              </th>
+              <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider text-text-muted whitespace-nowrap">
+                Property
               </th>
               <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider text-text-muted whitespace-nowrap">
                 Source
@@ -115,21 +222,42 @@ export function InquiryTable() {
                     {inquiry.guestPhone}
                   </td>
                   <td className="px-4 py-3.5 text-text-secondary whitespace-nowrap">
+                    {inquiry.property ? (
+                      <a
+                        href={`${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/properties/${inquiry.property.slug}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-accent hover:underline font-medium"
+                      >
+                        {inquiry.property.title}
+                      </a>
+                    ) : (
+                      <span className="text-text-muted italic">General Inquiry</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3.5 text-text-secondary whitespace-nowrap">
                     {formatEnum(inquiry.source)}
                   </td>
                   <td className="px-4 py-3.5 whitespace-nowrap">
-                    <AppSelect
-                      name={`status-${inquiry.id}`}
-                      defaultValue={String(inquiry.status)}
-                      placeholder="Status"
-                      options={Object.values(InquiryStatus).map((value) => ({
-                        value,
-                        label: formatEnum(value)
-                      }))}
-                      onValueChange={(value) =>
-                        void updateStatus(inquiry, value)
-                      }
-                    />
+                    <div className="flex items-center gap-2">
+                      <AppSelect
+                        name={`status-${inquiry.id}`}
+                        value={String(inquiry.status)}
+                        placeholder="Status"
+                        disabled={updatingIds[inquiry.id]}
+                        options={Object.values(InquiryStatus).map((value) => ({
+                          value,
+                          label: formatEnum(value)
+                        }))}
+                        onValueChange={(value) =>
+                          void updateStatus(inquiry, value)
+                        }
+                        className="w-36"
+                      />
+                      {updatingIds[inquiry.id] && (
+                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-accent border-t-transparent flex-shrink-0" />
+                      )}
+                    </div>
                   </td>
                   <td className="px-4 py-3.5 whitespace-nowrap">
                     <div className="flex justify-end gap-2">
@@ -149,7 +277,7 @@ export function InquiryTable() {
                         type="button"
                         title="Delete inquiry"
                         onClick={() => void deleteInquiry(inquiry)}
-                        className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-border text-text-secondary transition hover:border-red-400 hover:text-red-500 bg-bg-primary">
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-border text-text-secondary transition hover:border-red-400 hover:text-red-500 bg-bg-primary cursor-pointer">
                         <Trash2 size={15} />
                       </button>
                     </div>
@@ -159,7 +287,7 @@ export function InquiryTable() {
             ) : (
               <tr>
                 <td
-                  colSpan={5}
+                  colSpan={6}
                   className="px-4 py-8 text-center text-text-muted">
                   No inquiries found matching search criteria.
                 </td>

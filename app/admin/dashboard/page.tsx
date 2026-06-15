@@ -17,7 +17,22 @@ import Image from "next/image";
 import { prisma } from "@/lib/prisma";
 import { formatEnum } from "@/lib/utils";
 
+function formatTimeReceived(dateInput: Date | string): string {
+  const date = typeof dateInput === "string" ? new Date(dateInput) : dateInput;
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / (1000 * 60));
+  if (diffMins < 1) return "just now";
+  if (diffMins < 60) return `${diffMins} ${diffMins === 1 ? "min" : "mins"} ago`;
+  const diffHours = Math.floor(diffMins / 60);
+  if (diffHours < 24) return `${diffHours} ${diffHours === 1 ? "hour" : "hours"} ago`;
+  return "today";
+}
+
 export default async function AdminDashboardPage() {
+  const startOfDay = new Date();
+  startOfDay.setUTCHours(0, 0, 0, 0);
+
   const [
     totalProperties,
     featuredProperties,
@@ -29,6 +44,8 @@ export default async function AdminDashboardPage() {
     totalUsers,
     recentInquiries,
     recentProperties,
+    todayInquiries,
+    todayInquiriesCount,
   ] = await Promise.all([
     prisma.property.count({ where: { deletedAt: null } }),
     prisma.property.count({ where: { isFeatured: true, deletedAt: null } }),
@@ -70,6 +87,26 @@ export default async function AdminDashboardPage() {
           orderBy: { order: "asc" },
           take: 1
         }
+      }
+    }),
+    prisma.inquiry.findMany({
+      where: {
+        createdAt: { gte: startOfDay }
+      },
+      orderBy: { createdAt: "desc" },
+      take: 5,
+      include: {
+        property: {
+          select: {
+            id: true,
+            title: true,
+          }
+        }
+      }
+    }),
+    prisma.inquiry.count({
+      where: {
+        createdAt: { gte: startOfDay }
       }
     })
   ]);
@@ -114,6 +151,56 @@ export default async function AdminDashboardPage() {
         <p className="mt-1 text-sm text-text-secondary">
           Welcome back. Here is a summary of your Opollo Luxury Properties activity.
         </p>
+      </div>
+
+      {/* Today's Inquiries Card Section */}
+      <div className="rounded-lg bg-bg-secondary border border-border p-5 shadow-sm space-y-4">
+        <div className="flex items-center justify-between border-b border-border/80 pb-3">
+          <h2 className="text-lg font-semibold text-text-primary flex items-center gap-2">
+            <Clock size={18} className="text-accent animate-pulse" />
+            Today's Inquiries
+          </h2>
+          <Link
+            href="/admin/dashboard/inquiries"
+            className="text-xs font-semibold text-accent hover:underline flex items-center gap-0.5"
+          >
+            View all inquiries <ChevronRight size={14} />
+          </Link>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-[160px_1fr] gap-6">
+          {/* Large Count */}
+          <div className="flex flex-col items-center justify-center bg-bg-primary rounded-lg p-4 border border-border/50 text-center">
+            <span className="text-5xl font-extrabold text-accent">{todayInquiriesCount}</span>
+            <span className="mt-2 text-[10px] font-bold uppercase tracking-wider text-text-muted">
+              Received Today
+            </span>
+          </div>
+
+          {/* Mini List */}
+          <div className="flex flex-col justify-center">
+            {todayInquiries.length > 0 ? (
+              <div className="divide-y divide-border/60">
+                {todayInquiries.map((inquiry) => (
+                  <div key={inquiry.id} className="py-2.5 first:pt-0 last:pb-0 flex items-center justify-between gap-3 text-xs">
+                    <div className="min-w-0 flex items-center">
+                      <span className="font-semibold text-text-primary truncate max-w-[150px]">{inquiry.guestName}</span>
+                      <span className="text-text-muted mx-1.5">•</span>
+                      <span className="text-text-secondary truncate max-w-[200px] md:max-w-md">
+                        {inquiry.property ? inquiry.property.title : "General inquiry"}
+                      </span>
+                    </div>
+                    <span className="text-[10px] text-text-muted shrink-0 bg-bg-primary px-2 py-0.5 rounded border border-border/40 font-mono">
+                      {formatTimeReceived(inquiry.createdAt)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-text-muted italic py-4">No inquiries yet today.</p>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Stats Cards */}

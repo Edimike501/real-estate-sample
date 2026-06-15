@@ -41,6 +41,29 @@ export function MediaUploader({ propertyId }: MediaUploaderProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
 
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+
+  const handleDragStart = (index: number) => {
+    setDraggedIndex(index);
+  };
+
+  const handleDragOver = (e: DragEvent<HTMLDivElement>, index: number) => {
+    e.preventDefault();
+  };
+
+  const handleDrop = (e: DragEvent<HTMLDivElement>, index: number) => {
+    e.preventDefault();
+    if (draggedIndex === null || draggedIndex === index) return;
+
+    setStaged((current) => {
+      const result = [...current];
+      const [removed] = result.splice(draggedIndex, 1);
+      result.splice(index, 0, removed);
+      return result;
+    });
+    setDraggedIndex(null);
+  };
+
   const heroPreview = staged[0];
 
   function stageFiles(files: FileList | File[]) {
@@ -207,7 +230,7 @@ export function MediaUploader({ propertyId }: MediaUploaderProps) {
 
         <div className="space-y-3">
           <div className="flex items-center justify-between gap-3">
-            <p className="text-sm font-semibold text-text-primary">Selected previews</p>
+            <p className="text-sm font-semibold text-text-primary">Selected previews (drag to reorder)</p>
             <button
               type="button"
               onClick={() => inputRef.current?.click()}
@@ -221,12 +244,34 @@ export function MediaUploader({ propertyId }: MediaUploaderProps) {
           {staged.length ? (
             <div className="max-h-80 space-y-3 overflow-y-auto pr-1">
               {staged.map((item, index) => (
-                <div key={item.id} className="grid grid-cols-[88px_1fr_auto] gap-3 rounded-lg border border-border bg-bg-primary p-2">
+                <div
+                  key={item.id}
+                  draggable
+                  onDragStart={() => handleDragStart(index)}
+                  onDragOver={(e) => handleDragOver(e, index)}
+                  onDrop={(e) => handleDrop(e, index)}
+                  className="grid grid-cols-[88px_1fr_auto] gap-3 rounded-lg border border-border bg-bg-primary p-2 cursor-move select-none"
+                >
                   <div
-                    className="h-20 rounded-md bg-cover bg-center"
+                    className="h-20 rounded-md bg-cover bg-center relative overflow-hidden"
                     style={{ backgroundImage: `url(${item.previewUrl})` }}
                     aria-label={item.file.name}
-                  />
+                  >
+                    {/* Position Badge */}
+                    <div className="absolute top-1 left-1 h-5 w-5 rounded-full bg-black/70 text-white flex items-center justify-center text-[10px] font-bold">
+                      {index + 1}
+                    </div>
+
+                    {/* Cover label on position 1 */}
+                    {index === 0 && (
+                      <div
+                        className="absolute bottom-1 left-1 right-1 bg-amber-500 text-white text-[9px] font-bold text-center py-0.5 rounded shadow-sm"
+                        title="This is the cover image shown in listing cards"
+                      >
+                        ★ Cover
+                      </div>
+                    )}
+                  </div>
                   <div className="min-w-0 space-y-2">
                     <div>
                       <p className="truncate text-sm font-semibold text-text-primary">{index + 1}. {item.file.name}</p>
@@ -237,6 +282,7 @@ export function MediaUploader({ propertyId }: MediaUploaderProps) {
                       onChange={(event) => updateAltText(item.id, event.target.value)}
                       placeholder="Alt text"
                       className="w-full rounded-md border border-border bg-bg-secondary px-2 py-1.5 text-xs text-text-primary"
+                      onDragStart={(e) => e.stopPropagation()} // Prevent dragging input box
                     />
                   </div>
                   <button
@@ -244,7 +290,7 @@ export function MediaUploader({ propertyId }: MediaUploaderProps) {
                     onClick={() => removeStaged(item.id)}
                     disabled={isUploading}
                     title="Remove image"
-                    className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-border text-text-secondary transition hover:border-red-400 hover:text-red-300 disabled:opacity-60"
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-border text-text-secondary transition hover:border-red-400 hover:text-red-300 disabled:opacity-60 cursor-pointer self-start"
                   >
                     <Trash2 size={15} />
                   </button>

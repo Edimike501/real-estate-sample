@@ -79,13 +79,21 @@ const propertyCreateSchema = z.object({
     z.number().nullable().optional()
   ),
   titleType: z.string().nullable().optional(),
-  virtualTourUrl: z.string().nullable().optional()
+  virtualTourUrl: z.string().nullable().optional(),
+  duplicatedFrom: z.string().optional().nullable(),
+  estimatedCompletion: z.preprocess((val) => (val === "" || val === null || val === undefined ? null : new Date(val as string)), z.date().nullable().optional()),
+  zoningType: z.string().optional().nullable(),
+  furnished: z.boolean().optional().nullable(),
+  petsAllowed: z.boolean().optional().nullable(),
+  yearBuilt: z.preprocess((val) => (val === "" || val === null || val === undefined ? null : Number(val)), z.number().int().nullable().optional()),
 });
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
 
+    const ids = searchParams.get("ids");
+    const selectParam = searchParams.get("select");
     const listingType = searchParams.get("listingType");
     const state = searchParams.get("state");
     const city = searchParams.get("city");
@@ -95,12 +103,30 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get("status");
     const search = searchParams.get("search");
     const featured = searchParams.get("featured");
+    const tab = searchParams.get("tab");
     const page = Number(searchParams.get("page") ?? 1);
     const limit = Number(searchParams.get("limit") ?? 12);
 
-    const where: Prisma.PropertyWhereInput = {
-      deletedAt: null
-    };
+    const where: Prisma.PropertyWhereInput = {};
+
+    if (tab === "archived") {
+      where.deletedAt = { not: null };
+    } else {
+      where.deletedAt = null;
+    }
+
+    if (ids) {
+      where.id = { in: ids.split(",") };
+    }
+
+    if (selectParam === "id,title") {
+      const properties = await prisma.property.findMany({
+        where,
+        select: { id: true, title: true },
+        orderBy: { title: "asc" }
+      });
+      return NextResponse.json({ properties });
+    }
 
     if (listingType)
       where.listingType = listingType as Prisma.EnumListingTypeFilter["equals"];
@@ -165,6 +191,9 @@ export async function GET(request: NextRequest) {
         include: {
           media: {
             orderBy: { order: "asc" }
+          },
+          _count: {
+            select: { inquiries: true }
           }
         }
       }),

@@ -94,8 +94,9 @@ export function InquiryForm({ propertyId }: InquiryFormProps) {
       {error ? <p className="text-sm text-red-600">{error}</p> : null}
       <button
         type="submit"
+        id="main-enquiry-button"
         disabled={isSubmitting}
-        className="rounded-md bg-accent px-4 py-2 text-sm font-semibold text-white hover:bg-accent-light disabled:opacity-70"
+        className="w-full rounded-md bg-accent px-4 py-2.5 text-sm font-semibold text-white hover:bg-accent-light disabled:opacity-70 cursor-pointer"
       >
         {isSubmitting ? "Submitting..." : "Submit Inquiry"}
       </button>

@@ -11,6 +11,11 @@
   --color-accent: #1565c0;
   --color-accent-light: #42a5f5;
   --color-accent-muted: rgba(21, 101, 192, 0.15);
+  --color-status-available: #10b981;
+  --color-status-sold: #ef4444;
+  --color-status-let: #ef4444;
+  --color-status-offer: #f59e0b;
+  --color-status-soon: #64748b;
   --color-border: rgba(21, 101, 192, 0.12);
   --color-border-accent: rgba(21, 101, 192, 0.35);
   --font-display: "Cormorant Garamond", serif;

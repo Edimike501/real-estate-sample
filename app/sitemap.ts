@@ -1,3 +1,4 @@
+import { prisma } from "@/lib/prisma";
 import { MetadataRoute } from "next";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
@@ -12,8 +13,24 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: route === "" ? 1.0 : 0.8
   }));
 
-  // Note: If you fetch dynamic properties from a database later,
-  // you can fetch them here and map them to additional entries.
+  // Dynamic property routes
+  let propertyRoutes: MetadataRoute.Sitemap = [];
+  try {
+    const properties = await prisma.property.findMany({
+      where: { deletedAt: null },
+      select: { slug: true, updatedAt: true }
+    });
 
-  return [...routes];
+    propertyRoutes = properties.map((property) => ({
+      url: `${baseUrl}/properties/${property.slug}`,
+      lastModified: property.updatedAt.toISOString(),
+      changeFrequency: "daily" as const,
+      priority: 0.7
+    }));
+  } catch (error) {
+    // Fallback to static routes only on error
+    console.error("Failed to fetch properties for sitemap:", error);
+  }
+
+  return [...routes, ...propertyRoutes];
 }

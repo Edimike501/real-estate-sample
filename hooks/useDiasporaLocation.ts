@@ -49,6 +49,21 @@ const getInitialCurrency = (): DiasporaCurrency => {
   return "USD";
 };
 
+// Helper to detect if user is in Nigeria
+const getIsNigerian = (currency: DiasporaCurrency): boolean => {
+  if (typeof window === "undefined") return false;
+
+  // Check browser locale country code directly
+  const browserLocale = navigator.language || navigator.languages?.[0];
+  if (browserLocale) {
+    const countryCode = browserLocale.split("-")[1]?.toUpperCase();
+    if (countryCode === "NG") return true;
+  }
+
+  // If currency is null, it means Nigeria (from COUNTRY_TO_CURRENCY map)
+  return currency === null;
+};
+
 export function useDiasporaLocation() {
   // Initialize state once on mount. No useEffect required!
   const [currency, setCurrency] = useState<DiasporaCurrency>(() =>
@@ -67,5 +82,13 @@ export function useDiasporaLocation() {
     }
   };
 
-  return { currency, isLoading, setDiasporaCurrency, CURRENCY_SYMBOLS };
+  const isNigerian = getIsNigerian(currency);
+
+  return {
+    currency,
+    isLoading,
+    isNigerian,
+    setDiasporaCurrency,
+    CURRENCY_SYMBOLS
+  };
 }

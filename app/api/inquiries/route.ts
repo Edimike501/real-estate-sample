@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { Prisma } from "@prisma/client";
 
 import { sendInquiryNotification } from "@/lib/email";
 import { prisma } from "@/lib/prisma";
@@ -20,9 +21,26 @@ const updateInquirySchema = z.object({
   adminNotes: z.string().optional(),
 });
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    const { searchParams } = new URL(request.url);
+    const today = searchParams.get("today");
+    const propertyId = searchParams.get("propertyId");
+
+    const where: Prisma.InquiryWhereInput = {};
+
+    if (today === "true") {
+      const startOfDay = new Date();
+      startOfDay.setUTCHours(0, 0, 0, 0);
+      where.createdAt = { gte: startOfDay };
+    }
+
+    if (propertyId) {
+      where.propertyId = propertyId;
+    }
+
     const inquiries = await prisma.inquiry.findMany({
+      where,
       orderBy: { createdAt: "desc" },
       include: {
         property: {
@@ -57,16 +75,21 @@ export async function POST(request: NextRequest) {
     const property = payload.propertyId
       ? await prisma.property.findUnique({
           where: { id: payload.propertyId },
-          select: { title: true, city: true, state: true },
+          select: { title: true, city: true, state: true, slug: true },
         })
       : null;
 
     const propertyLocation = property ? `${property.city}, ${property.state}` : undefined;
+    const propertyUrl = property
+      ? `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/properties/${property.slug}`
+      : undefined;
+
     const whatsappMessage = buildWhatsAppMessage({
       guestName: payload.guestName,
       guestPhone: payload.guestPhone,
       propertyTitle: property?.title,
       propertyLocation,
+      propertyUrl,
       source: payload.source,
       customMessage: payload.message,
     });
@@ -101,6 +124,7 @@ export async function POST(request: NextRequest) {
         guestPhone: payload.guestPhone,
         propertyTitle: property?.title,
         propertyLocation,
+        propertyUrl,
         source: payload.source,
         customMessage: payload.message,
       }),

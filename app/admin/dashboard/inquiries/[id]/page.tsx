@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 
 import { InquiryDetail } from "@/components/admin/InquiryDetail";
+import { BackButton } from "@/components/ui/BackButton";
 import { prisma } from "@/lib/prisma";
 
 export default async function InquiryDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -23,6 +24,11 @@ export default async function InquiryDetailPage({ params }: { params: Promise<{ 
   if (!inquiry) notFound();
   return (
     <div className="space-y-4">
+      <BackButton
+        href="/admin/dashboard/inquiries"
+        label="Back to Inquiries"
+        variant="minimal"
+      />
       <h1 className="text-2xl font-bold text-text-primary">Inquiry Detail</h1>
       <InquiryDetail inquiry={inquiry} />
     </div>

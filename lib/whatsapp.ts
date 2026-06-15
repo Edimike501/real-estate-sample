@@ -7,6 +7,7 @@ type BuildWhatsAppLinkParams = {
   guestPhone: string;
   propertyTitle?: string;
   propertyLocation?: string;
+  propertyUrl?: string;        // ← ADD: full public URL to the property page
   source: InquirySource;
   customMessage?: string;
 };
@@ -17,20 +18,21 @@ export function buildWhatsAppLink(params: BuildWhatsAppLinkParams): string {
 }
 
 export function buildWhatsAppMessage(params: BuildWhatsAppLinkParams): string {
-  const { guestName, propertyTitle, propertyLocation, customMessage } = params;
+  const { guestName, propertyTitle, propertyLocation, propertyUrl, customMessage } = params;
   if (customMessage) return customMessage;
 
   if (propertyTitle) {
     return (
-      `Hi Opollo Luxury Properties, my name is ${guestName}. ` +
-      `I'm interested in the property: *${propertyTitle}*` +
-      (propertyLocation ? ` located at ${propertyLocation}` : "") +
-      `. Please get back to me. Thank you.`
+      `Hi Opollo Luxury Properties, my name is ${guestName}.\n\n` +
+      `I'm interested in the following property:\n` +
+      `*${propertyTitle}*` +
+      (propertyLocation ? `\n📍 ${propertyLocation}` : "") +
+      (propertyUrl ? `\n🔗 ${propertyUrl}` : "") +
+      `\n\nPlease get back to me. Thank you.`
     );
   }
-
   return (
-    `Hi Opollo Luxury Properties, my name is ${guestName}. ` +
+    `Hi Opollo Luxury Properties, my name is ${guestName}.\n\n` +
     `I'd like to make a general enquiry about your properties.`
   );
 }

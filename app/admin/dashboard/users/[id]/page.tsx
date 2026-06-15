@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 
 import { UserDetail } from "@/components/admin/UserDetail";
+import { BackButton } from "@/components/ui/BackButton";
 import { prisma } from "@/lib/prisma";
 
 export default async function UserDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -23,6 +24,11 @@ export default async function UserDetailPage({ params }: { params: Promise<{ id:
 
   return (
     <div className="space-y-4">
+      <BackButton
+        href="/admin/dashboard/users"
+        label="Back to Users"
+        variant="minimal"
+      />
       <h1 className="text-2xl font-bold text-text-primary">User Detail</h1>
       <UserDetail user={user} />
     </div>

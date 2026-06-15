@@ -2,6 +2,7 @@
 
 import ThemeToggle from "@/components/ui/ThemeToggle";
 import Logo from "@/components/ui/Logo";
+import { BackButton } from "@/components/ui/BackButton";
 import { Menu, X, Bookmark } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
@@ -80,6 +81,13 @@ export default function Navbar() {
       {mobileMenuOpen && (
         <div className="fixed top-16 left-0 right-0 z-30 bg-bg-primary border-b border-border md:hidden">
           <div className="px-4 py-4 space-y-2">
+            <BackButton
+              href="/"
+              label="Close Menu"
+              variant="minimal"
+              onClick={() => setMobileMenuOpen(false)}
+              className="mb-2"
+            />
             {navLinks.map((link) => (
               <Link
                 key={link.href}

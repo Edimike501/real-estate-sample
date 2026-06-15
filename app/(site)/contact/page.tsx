@@ -1,5 +1,6 @@
 import { JsonLd } from "@/components/seo/JsonLd";
 import ContactForm from "@/components/ui/ContactForm";
+import { BackButton } from "@/components/ui/BackButton";
 import WhatsAppButton from "@/components/ui/WhatsAppButton";
 import { siteMetadata } from "@/metadata/site";
 import { Mail, MapPin, Phone } from "lucide-react";
@@ -85,6 +86,7 @@ export default function ContactPage() {
       <JsonLd schema={contactPageSchema} />
       <main className="section-padding bg-bg-primary min-h-screen">
         <div className="max-w-6xl mx-auto">
+          <BackButton href="/" label="Back" variant="minimal" className="mb-6" />
           <div className="max-w-3xl mb-12">
             <h1 className="text-4xl md:text-5xl font-display font-bold text-text-primary mb-4">
               Contact Us

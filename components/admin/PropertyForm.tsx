@@ -14,6 +14,7 @@ import {
   ChangeEvent,
   DragEvent,
   FormEvent,
+  useCallback,
   useEffect,
   useRef,
   useState
@@ -251,8 +252,19 @@ export const CONDITIONAL_PROPERTY_FIELDS: Record<
   ]
 };
 
+export type PropertyFormNavigationGuard = {
+  isDirty: () => boolean;
+  confirmLeave: (destination: string) => Promise<boolean>;
+};
+
+type PendingNavigation = {
+  destination: string | "back";
+  resolve?: (allowed: boolean) => void;
+};
+
 type PropertyFormProps = {
   property?: Property;
+  onRegisterNavigationGuard?: (guard: PropertyFormNavigationGuard) => void;
 };
 
 type StagedMedia = {
@@ -296,7 +308,10 @@ function formatDateForInput(dateVal: Date | string | undefined | null) {
   return date.toISOString().split("T")[0];
 }
 
-export function PropertyForm({ property }: PropertyFormProps) {
+export function PropertyForm({
+  property,
+  onRegisterNavigationGuard,
+}: PropertyFormProps) {
   const router = useRouter();
   const imageInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
@@ -326,7 +341,151 @@ export function PropertyForm({ property }: PropertyFormProps) {
 
   const [isDirty, setIsDirty] = useState(false);
   const [showBlockModal, setShowBlockModal] = useState(false);
-  const [pendingUrl, setPendingUrl] = useState<string | null>(null);
+  const pendingNavigationRef = useRef<PendingNavigation | null>(null);
+
+  const requestNavigation = useCallback(
+    (destination: string | "back"): Promise<boolean> => {
+      if (!isDirty) return Promise.resolve(true);
+
+      return new Promise((resolve) => {
+        pendingNavigationRef.current = { destination, resolve };
+        setShowBlockModal(true);
+      });
+    },
+    [isDirty]
+  );
+
+  const confirmLeave = useCallback(
+    (destination: string) => requestNavigation(destination),
+    [requestNavigation]
+  );
+
+  useEffect(() => {
+    onRegisterNavigationGuard?.({
+      isDirty: () => isDirty,
+      confirmLeave,
+    });
+  }, [confirmLeave, isDirty, onRegisterNavigationGuard]);
+
+  // Store initial values to compare against
+  const initialDataRef = useRef({
+    address: property?.address ?? "",
+    landmark: property?.landmark ?? "",
+    latitude: property?.latitude ?? undefined,
+    longitude: property?.longitude ?? undefined,
+    listingType: (property?.listingType as ListingType) ?? ListingType.SALE,
+    // Store initial form field values from property
+    title: property?.title ?? "",
+    slug: property?.slug ?? "",
+    description: property?.description ?? "",
+    city: property?.city ?? "",
+    state: property?.state ?? "Lagos",
+    country: property?.country ?? "Nigeria",
+    status: String(property?.status ?? "AVAILABLE"),
+    // Store initial conditional field values (using any for type flexibility)
+    salePrice: property?.salePrice,
+    bedrooms: property?.bedrooms,
+    bathrooms: property?.bathrooms,
+    toilets: property?.toilets,
+    sizeSqm: property?.sizeSqm,
+    rentalPrice: property?.rentalPrice,
+    priceFrequency: property?.priceFrequency,
+    availableFrom: property?.availableFrom,
+    leaseTerm: property?.leaseTerm,
+    serviceCharge: property?.serviceCharge,
+    cautionFee: property?.cautionFee,
+    landSizeSqm: property?.landSizeSqm,
+    titleType: property?.titleType,
+    negotiationStatus: property?.negotiationStatus,
+    yearBuilt: property?.yearBuilt,
+    furnished: property?.furnished,
+    petsAllowed: property?.petsAllowed,
+    estimatedCompletion: property?.estimatedCompletion,
+    zoningType: property?.zoningType
+  });
+
+  // Check if form values have changed from initial
+  const checkIfDirty = (formData?: FormData) => {
+    const current = {
+      address,
+      landmark,
+      latitude,
+      longitude,
+      listingType
+    };
+
+    const hasStateChanged =
+      current.address !== initialDataRef.current.address ||
+      current.landmark !== initialDataRef.current.landmark ||
+      current.latitude !== initialDataRef.current.latitude ||
+      current.longitude !== initialDataRef.current.longitude ||
+      current.listingType !== initialDataRef.current.listingType;
+
+    if (hasStateChanged) return true;
+
+    // If formData is provided, check form fields
+    if (formData) {
+      const title = formData.get("title") as string;
+      const slug = formData.get("slug") as string;
+      const description = formData.get("description") as string;
+      const city = formData.get("city") as string;
+      const state = formData.get("state") as string;
+      const country = formData.get("country") as string;
+      const status = formData.get("status") as string;
+
+      if (title !== initialDataRef.current.title) return true;
+      if (slug !== initialDataRef.current.slug) return true;
+      if (description !== initialDataRef.current.description) return true;
+      if (city !== initialDataRef.current.city) return true;
+      if (state !== initialDataRef.current.state) return true;
+      if (country !== initialDataRef.current.country) return true;
+      if (status !== initialDataRef.current.status) return true;
+
+      // Check conditional fields
+      const conditionalFields = [
+        "salePrice",
+        "bedrooms",
+        "bathrooms",
+        "toilets",
+        "sizeSqm",
+        "rentalPrice",
+        "priceFrequency",
+        "availableFrom",
+        "leaseTerm",
+        "serviceCharge",
+        "cautionFee",
+        "landSizeSqm",
+        "titleType",
+        "negotiationStatus",
+        "yearBuilt",
+        "furnished",
+        "petsAllowed",
+        "estimatedCompletion",
+        "zoningType"
+      ];
+
+      for (const field of conditionalFields) {
+        const currentValue = formData.get(field);
+        const initialValue =
+          initialDataRef.current[field as keyof typeof initialDataRef.current];
+
+        // Handle null/undefined/empty string comparisons
+        if (currentValue === "" || currentValue === null) {
+          if (
+            initialValue !== null &&
+            initialValue !== undefined &&
+            initialValue !== ""
+          ) {
+            return true;
+          }
+        } else if (String(currentValue) !== String(initialValue ?? "")) {
+          return true;
+        }
+      }
+    }
+
+    return false;
+  };
 
   // 1. Browser navigation (close tab, refresh, external links)
   useEffect(() => {
@@ -353,9 +512,13 @@ export function PropertyForm({ property }: PropertyFormProps) {
       if (anchor) {
         const href = anchor.getAttribute("href");
         const targetAttr = anchor.getAttribute("target");
-        if (href && targetAttr !== "_blank" && (href.startsWith("/") || href.startsWith(window.location.origin))) {
+        if (
+          href &&
+          targetAttr !== "_blank" &&
+          (href.startsWith("/") || href.startsWith(window.location.origin))
+        ) {
           e.preventDefault();
-          setPendingUrl(href);
+          pendingNavigationRef.current = { destination: href };
           setShowBlockModal(true);
         }
       }
@@ -363,7 +526,7 @@ export function PropertyForm({ property }: PropertyFormProps) {
 
     const handlePopState = () => {
       window.history.pushState(null, "", window.location.href);
-      setPendingUrl("back");
+      pendingNavigationRef.current = { destination: "back" };
       setShowBlockModal(true);
     };
 
@@ -454,6 +617,54 @@ export function PropertyForm({ property }: PropertyFormProps) {
     } | null;
 
     if (response.ok) {
+      // Update initial data ref to reflect the new saved values
+      // Update initial data ref to reflect the new saved values
+      initialDataRef.current = {
+        address,
+        landmark,
+        latitude,
+        longitude,
+        listingType,
+        title: payload.title as string,
+        slug: payload.slug as string,
+        description: payload.description as string,
+        city: payload.city as string,
+        state: payload.state as string,
+        country: payload.country as string,
+        status: payload.status as string,
+        salePrice: payload.salePrice as number | null | undefined,
+        bedrooms: payload.bedrooms as number | null | undefined,
+        bathrooms: payload.bathrooms as number | null | undefined,
+        toilets: payload.toilets as number | null | undefined,
+        sizeSqm: payload.sizeSqm as number | null | undefined,
+        rentalPrice: payload.rentalPrice as number | null | undefined,
+        priceFrequency: payload.priceFrequency as
+          | PriceFrequency
+          | null
+          | undefined,
+        availableFrom: payload.availableFrom as
+          | Date
+          | string
+          | null
+          | undefined,
+        leaseTerm: payload.leaseTerm as string | null | undefined,
+        serviceCharge: payload.serviceCharge as number | null | undefined,
+        cautionFee: payload.cautionFee as number | null | undefined,
+        landSizeSqm: payload.landSizeSqm as number | null | undefined,
+        titleType: payload.titleType as string | null | undefined,
+        negotiationStatus: payload.negotiationStatus as
+          | NegotiationStatus
+          | undefined,
+        yearBuilt: payload.yearBuilt as number | null | undefined,
+        furnished: payload.furnished as boolean | null | undefined,
+        petsAllowed: payload.petsAllowed as boolean | null | undefined,
+        estimatedCompletion: payload.estimatedCompletion as
+          | Date
+          | string
+          | null
+          | undefined,
+        zoningType: payload.zoningType as string | null | undefined
+      };
       setIsDirty(false);
       setFormStatus(
         isEditing
@@ -1216,37 +1427,44 @@ export function PropertyForm({ property }: PropertyFormProps) {
       )}
 
       {showBlockModal && (
-        <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-fade-in">
+        <div className="fixed inset-0 z-10000 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-fade-in">
           <div className="w-full max-w-md bg-bg-secondary border border-border rounded-lg p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-200 text-left">
             <h3 className="text-lg font-bold text-text-primary font-display">
               Leave without saving?
             </h3>
             <p className="text-sm text-text-secondary">
-              You have unsaved changes. If you leave now, your changes will be lost.
+              You have unsaved changes. If you leave now, your changes will be
+              lost.
             </p>
             <div className="flex justify-end gap-3 pt-2">
               <button
                 onClick={() => {
+                  pendingNavigationRef.current?.resolve?.(false);
+                  pendingNavigationRef.current = null;
                   setShowBlockModal(false);
-                  setPendingUrl(null);
                 }}
-                className="px-4 py-2 text-xs font-semibold text-text-secondary border border-border rounded-md hover:bg-bg-primary transition cursor-pointer"
-              >
+                className="px-4 py-2 text-xs font-semibold text-text-secondary border border-border rounded-md hover:bg-bg-primary transition cursor-pointer">
                 Stay on page
               </button>
               <button
                 onClick={() => {
+                  const pending = pendingNavigationRef.current;
+                  pendingNavigationRef.current = null;
                   setIsDirty(false);
-                  const dest = pendingUrl;
                   setShowBlockModal(false);
-                  if (dest === "back") {
+
+                  if (pending?.resolve) {
+                    pending.resolve(true);
+                    return;
+                  }
+
+                  if (pending?.destination === "back") {
                     router.back();
-                  } else if (dest) {
-                    router.push(dest);
+                  } else if (pending?.destination) {
+                    router.push(pending.destination);
                   }
                 }}
-                className="px-4 py-2 text-xs font-semibold text-white bg-accent rounded-md hover:opacity-90 transition cursor-pointer"
-              >
+                className="px-4 py-2 text-xs font-semibold text-white bg-accent rounded-md hover:opacity-90 transition cursor-pointer">
                 Leave anyway
               </button>
             </div>

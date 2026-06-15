@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import ClientPropertyMap from "@/components/property/ClientPropertyMap";
+import { BackButton } from "@/components/ui/BackButton";
 import { ListingTypeBadge } from "@/components/property/ListingTypeBadge";
 import { PropertyDetailFeatures } from "@/components/property/PropertyDetailFeatures";
 import { PropertyDetailListingFields } from "@/components/property/PropertyDetailListingFields";
@@ -30,6 +31,12 @@ export default async function PropertyDetailPage({
 
   return (
     <div className="space-y-6">
+      <BackButton
+        href="/admin/dashboard/properties"
+        label="Back to Properties"
+        variant="minimal"
+      />
+
       {/* Header: Property title + status badge + listing type badge */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="space-y-2">

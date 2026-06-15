@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
+import { PropertyDetailBackNav } from "@/components/property/PropertyDetailBackNav";
 import { InquiryForm } from "@/components/property/InquiryForm";
 import PropertyClientActions from "@/components/property/PropertyClientActions";
 import { PropertyDetailHero } from "@/components/property/PropertyDetailHero";
@@ -111,6 +112,8 @@ export default async function PropertyDetailPage({ params }: Props) {
   return (
     <main className="section-padding bg-bg-primary min-h-screen">
       <div className="mx-auto max-w-7xl">
+        <PropertyDetailBackNav />
+
         {/* Image Gallery - Full Width */}
         <PropertyDetailHero property={property} />
 

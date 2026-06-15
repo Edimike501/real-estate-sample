@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { X, Trash2, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { CloudinaryImage } from "@/components/shared/cloudinary-image";
+import { BackButton } from "@/components/ui/BackButton";
 import { type Property } from "@/types";
 import { MediaType } from "@/types/enums";
 import { motion, AnimatePresence } from "framer-motion";
@@ -78,15 +79,17 @@ export default function SavedPropertiesDrawer({ isOpen, onClose }: SavedProperti
           >
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-border">
-              <h2 className="text-lg font-bold text-text-primary font-display uppercase tracking-wider">
-                Saved Properties ({bookmarks.length})
-              </h2>
-              <button
-                onClick={onClose}
-                className="p-1 rounded-full text-text-secondary hover:text-text-primary hover:bg-bg-secondary transition cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
+              <div className="flex items-center gap-3 min-w-0">
+                <BackButton
+                  href="/"
+                  label="Close"
+                  variant="minimal"
+                  onClick={onClose}
+                />
+                <h2 className="text-lg font-bold text-text-primary font-display uppercase tracking-wider truncate">
+                  Saved Properties ({bookmarks.length})
+                </h2>
+              </div>
             </div>
 
             {/* Content Area */}

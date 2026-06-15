@@ -1,3 +1,4 @@
+import { PropertiesBackButton } from "@/components/property/PropertiesBackButton";
 import { PropertyFilter } from "@/components/property/PropertyFilter";
 import { PropertyGrid } from "@/components/property/PropertyGrid";
 import { JsonLd } from "@/components/seo/JsonLd";
@@ -22,6 +23,9 @@ export default function PropertiesPage() {
       <JsonLd schema={collectionSchema} />
       <main className="min-h-screen bg-bg-primary section-padding">
         <section className="mx-auto max-w-7xl space-y-6">
+          <Suspense fallback={null}>
+            <PropertiesBackButton />
+          </Suspense>
           <div className="space-y-2 text-center">
             <h1 className="text-4xl font-bold text-text-primary">
               All Properties

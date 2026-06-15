@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { type Property } from "@/types";
 
 export async function getExchangeRates(): Promise<Record<string, number>> {
-  const targetCurrencies = ["USD", "GBP", "EUR", "AED"];
+  const targetCurrencies = ["USD", "GBP", "EUR", "AED", "CAD"];
   const now = new Date();
   const fourHoursAgo = new Date(now.getTime() - 4 * 60 * 60 * 1000);
 
@@ -63,7 +63,8 @@ export async function getExchangeRates(): Promise<Record<string, number>> {
             USD: 1500,
             GBP: 1900,
             EUR: 1600,
-            AED: 400
+            AED: 400,
+            CAD: 1050
           };
           ratesMap[currency] = defaults[currency];
         }
@@ -81,7 +82,8 @@ export async function getExchangeRates(): Promise<Record<string, number>> {
       USD: 1500,
       GBP: 1900,
       EUR: 1600,
-      AED: 400
+      AED: 400,
+      CAD: 1050
     };
 
     for (const currency of targetCurrencies) {

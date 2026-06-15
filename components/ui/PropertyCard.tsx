@@ -1,21 +1,20 @@
 "use client";
 
+import { useGuestSession } from "@/hooks/useGuestSession";
+import { buildWhatsAppLink } from "@/lib/whatsapp";
 import { Property } from "@/types";
-import { Bath, Bed, Ruler } from "lucide-react";
+import { InquirySource } from "@/types/enums";
+import { Bath, Bed, MessageCircle, Ruler } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import AnimatedSection from "./AnimatedSection";
-import WhatsAppButton from "./WhatsAppButton";
 
 interface PropertyCardProps {
   property: Property;
-  phoneNumber: string;
 }
 
-export default function PropertyCard({
-  property,
-  phoneNumber
-}: PropertyCardProps) {
+export default function PropertyCard({ property }: PropertyCardProps) {
+  const { session } = useGuestSession();
   const imageSrc = property.image ?? "/images/properties/prop-001.svg";
   const statusColors = {
     AVAILABLE: "bg-green-500",
@@ -42,6 +41,20 @@ export default function PropertyCard({
   const typeKey = String(
     property.type ?? property.listingType
   ) as keyof typeof typeColors;
+
+  const propertyUrl = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/properties/${property.slug}`;
+  const locationStr =
+    property.location ||
+    [property.city, property.state].filter(Boolean).join(", ");
+
+  const whatsappLink = buildWhatsAppLink({
+    guestName: session?.name || "Guest",
+    guestPhone: session?.phone || "",
+    propertyTitle: property.title,
+    propertyLocation: locationStr,
+    propertyUrl,
+    source: InquirySource.FEATURED_CARD
+  });
 
   return (
     <AnimatedSection>
@@ -109,15 +122,14 @@ export default function PropertyCard({
               className="inline-flex w-full items-center justify-center rounded-md bg-accent px-4 py-2.5 text-sm font-semibold text-white hover:bg-accent-light transition">
               View Property
             </Link>
-            <WhatsAppButton
-              phoneNumber={phoneNumber}
-              message={
-                property.whatsappMessage ??
-                `Hi, I'm interested in ${property.title}.`
-              }
-              label="Enquire Now"
-              className="w-full"
-            />
+            <Link
+              href={whatsappLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex w-full items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-lg transition-all px-6 py-3 text-sm">
+              <MessageCircle className="w-5 h-5" />
+              Enquire Now
+            </Link>
           </div>
         </div>
       </div>

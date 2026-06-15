@@ -109,7 +109,9 @@ export default function PriceDisplay({
   }
 
   // Foreign currency active
-  const converted = ngnAmount * rate;
+  // Rate represents "how many NGN per 1 foreign currency" (e.g., 1500 NGN = 1 USD)
+  // So to convert NGN to foreign currency, we DIVIDE by the rate
+  const converted = ngnAmount / rate;
 
   return (
     <div className="flex flex-col gap-0.5">

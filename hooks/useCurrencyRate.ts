@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 
 export type DiasporaCurrency = "GBP" | "USD" | "CAD" | "AED" | "EUR";
 
@@ -25,26 +25,27 @@ export function useCurrencyRate(): CurrencyRates {
     rates: {},
     lastUpdated: "",
     loading: true,
-    error: false,
+    error: false
   });
 
   useEffect(() => {
     let active = true;
+    let cachedData: CachedData | null = null;
 
     async function fetchRates() {
       // 1. Try local cache first
       try {
         const cached = localStorage.getItem(CACHE_KEY);
         if (cached) {
-          const parsed: CachedData = JSON.parse(cached);
+          cachedData = JSON.parse(cached);
           const now = Date.now();
-          if (now - parsed.timestamp < TTL_MS) {
+          if (cachedData && now - cachedData.timestamp < TTL_MS) {
             if (active) {
               setData({
-                rates: parsed.rates,
-                lastUpdated: parsed.lastUpdated,
+                rates: cachedData.rates,
+                lastUpdated: cachedData.lastUpdated,
                 loading: false,
-                error: false,
+                error: false
               });
               return;
             }
@@ -54,32 +55,47 @@ export function useCurrencyRate(): CurrencyRates {
         console.error("Error reading cached rates", e);
       }
 
-      // 2. Fetch fresh rates
+      // 2. Fetch fresh rates from our API proxy
       try {
-        const res = await fetch("https://open.er-api.com/v6/latest/NGN");
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+        const res = await fetch("/api/exchange-rates", {
+          signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+
         if (!res.ok) {
-          throw new Error("Failed to fetch exchange rates");
+          throw new Error(`Failed to fetch exchange rates: ${res.status}`);
         }
-        const json = await res.json();
-        
+
+        const json = await res.json() as {
+          rates: Record<string, number>;
+          lastUpdated: string;
+        };
+
+        // Server returns rates keyed by currency (e.g. { USD: 1500, GBP: 1900 })
         const rates: Partial<Record<DiasporaCurrency, number>> = {
           GBP: json.rates.GBP,
           USD: json.rates.USD,
           CAD: json.rates.CAD,
           AED: json.rates.AED,
-          EUR: json.rates.EUR,
+          EUR: json.rates.EUR
         };
 
-        const lastUpdated = new Date(json.time_last_update_utc).toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric",
-          year: "numeric",
-        });
+        const lastUpdated = new Date(json.lastUpdated).toLocaleDateString(
+          "en-US",
+          {
+            month: "short",
+            day: "numeric",
+            year: "numeric"
+          }
+        );
 
         const cacheObj: CachedData = {
           rates,
           lastUpdated,
-          timestamp: Date.now(),
+          timestamp: Date.now()
         };
 
         localStorage.setItem(CACHE_KEY, JSON.stringify(cacheObj));
@@ -89,17 +105,26 @@ export function useCurrencyRate(): CurrencyRates {
             rates,
             lastUpdated,
             loading: false,
-            error: false,
+            error: false
           });
         }
       } catch (err) {
-        console.error(err);
-        if (active) {
+        console.error("Error fetching exchange rates:", err);
+
+        // Fallback to expired cache if available
+        if (cachedData && active) {
+          setData({
+            rates: cachedData.rates,
+            lastUpdated: cachedData.lastUpdated,
+            loading: false,
+            error: true // Still mark as error to indicate data might be stale
+          });
+        } else if (active) {
           setData({
             rates: {},
             lastUpdated: "",
             loading: false,
-            error: true,
+            error: true
           });
         }
       }

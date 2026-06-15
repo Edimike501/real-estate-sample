@@ -69,7 +69,10 @@ export const metadata: Metadata = {
   },
   verification: {
     google: "QNfT_B0u38uhJYWrXmuR5gtsGA5MO8ekvEJmoHOqvy8",
-    yandex: "f68f08098931ea5c"
+    yandex: "f68f08098931ea5c",
+    other: {
+      "msvalidate.01": "CBF3579FFE59B5BE3A9B4D8C3E421BDA" // Add your unique Bing verification token here
+    }
   },
   alternates: {
     canonical: "./"

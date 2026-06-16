@@ -5,6 +5,7 @@ import { z } from "zod";
 import { getDiasporaDisplayPrice, getExchangeRates } from "@/lib/currency";
 import { prisma } from "@/lib/prisma";
 import type { Property } from "@/types";
+import { submitToIndexNow } from "@/lib/indexnow";
 
 const propertyCreateSchema = z.object({
   slug: z.string().min(3),
@@ -250,6 +251,15 @@ export async function POST(request: NextRequest) {
         status: payload.status ?? "AVAILABLE"
       }
     });
+
+    // Submit to IndexNow for search engine notification
+    if (property.status === "AVAILABLE") {
+      submitToIndexNow([`/properties/${property.slug}`]).catch(
+        (error: unknown) => {
+          console.error("Failed to submit to IndexNow:", error);
+        }
+      );
+    }
 
     const rates = await getExchangeRates();
     const diasporaPrice = getDiasporaDisplayPrice(

@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
-import { deletePropertyMedia } from "@/lib/media";
+import { getDiasporaDisplayPrice, getExchangeRates } from "@/lib/currency";
 import { prisma } from "@/lib/prisma";
-import { getExchangeRates, getDiasporaDisplayPrice } from "@/lib/currency";
 import type { Property } from "@/types";
+import { submitToIndexNow } from "@/lib/indexnow";
 
 const updatePropertySchema = z.object({
   slug: z.string().min(3).optional(),
@@ -23,26 +23,81 @@ const updatePropertySchema = z.object({
   longitude: z.number().optional().nullable(),
   isFeatured: z.boolean().optional(),
   isPinned: z.boolean().optional(),
-  bedrooms: z.preprocess((val) => (val === "" || val === null || val === undefined ? null : Number(val)), z.number().int().nullable().optional()),
-  bathrooms: z.preprocess((val) => (val === "" || val === null || val === undefined ? null : Number(val)), z.number().int().nullable().optional()),
-  toilets: z.preprocess((val) => (val === "" || val === null || val === undefined ? null : Number(val)), z.number().int().nullable().optional()),
-  sizeSqm: z.preprocess((val) => (val === "" || val === null || val === undefined ? null : Number(val)), z.number().nullable().optional()),
-  salePrice: z.preprocess((val) => (val === "" || val === null || val === undefined ? null : Number(val)), z.number().nullable().optional()),
-  rentalPrice: z.preprocess((val) => (val === "" || val === null || val === undefined ? null : Number(val)), z.number().nullable().optional()),
-  priceFrequency: z.enum(["ONE_OFF", "PER_MONTH", "PER_YEAR"]).nullable().optional(),
-  availableFrom: z.preprocess((val) => (val === "" || val === null || val === undefined ? null : new Date(val as string)), z.date().nullable().optional()),
+  bedrooms: z.preprocess(
+    (val) =>
+      val === "" || val === null || val === undefined ? null : Number(val),
+    z.number().int().nullable().optional()
+  ),
+  bathrooms: z.preprocess(
+    (val) =>
+      val === "" || val === null || val === undefined ? null : Number(val),
+    z.number().int().nullable().optional()
+  ),
+  toilets: z.preprocess(
+    (val) =>
+      val === "" || val === null || val === undefined ? null : Number(val),
+    z.number().int().nullable().optional()
+  ),
+  sizeSqm: z.preprocess(
+    (val) =>
+      val === "" || val === null || val === undefined ? null : Number(val),
+    z.number().nullable().optional()
+  ),
+  salePrice: z.preprocess(
+    (val) =>
+      val === "" || val === null || val === undefined ? null : Number(val),
+    z.number().nullable().optional()
+  ),
+  rentalPrice: z.preprocess(
+    (val) =>
+      val === "" || val === null || val === undefined ? null : Number(val),
+    z.number().nullable().optional()
+  ),
+  priceFrequency: z
+    .enum(["ONE_OFF", "PER_MONTH", "PER_YEAR"])
+    .nullable()
+    .optional(),
+  availableFrom: z.preprocess(
+    (val) =>
+      val === "" || val === null || val === undefined
+        ? null
+        : new Date(val as string),
+    z.date().nullable().optional()
+  ),
   leaseTerm: z.string().nullable().optional(),
-  serviceCharge: z.preprocess((val) => (val === "" || val === null || val === undefined ? null : Number(val)), z.number().nullable().optional()),
-  cautionFee: z.preprocess((val) => (val === "" || val === null || val === undefined ? null : Number(val)), z.number().nullable().optional()),
-  landSizeSqm: z.preprocess((val) => (val === "" || val === null || val === undefined ? null : Number(val)), z.number().nullable().optional()),
+  serviceCharge: z.preprocess(
+    (val) =>
+      val === "" || val === null || val === undefined ? null : Number(val),
+    z.number().nullable().optional()
+  ),
+  cautionFee: z.preprocess(
+    (val) =>
+      val === "" || val === null || val === undefined ? null : Number(val),
+    z.number().nullable().optional()
+  ),
+  landSizeSqm: z.preprocess(
+    (val) =>
+      val === "" || val === null || val === undefined ? null : Number(val),
+    z.number().nullable().optional()
+  ),
   titleType: z.string().nullable().optional(),
   virtualTourUrl: z.string().nullable().optional(),
   duplicatedFrom: z.string().optional().nullable(),
-  estimatedCompletion: z.preprocess((val) => (val === "" || val === null || val === undefined ? null : new Date(val as string)), z.date().nullable().optional()),
+  estimatedCompletion: z.preprocess(
+    (val) =>
+      val === "" || val === null || val === undefined
+        ? null
+        : new Date(val as string),
+    z.date().nullable().optional()
+  ),
   zoningType: z.string().optional().nullable(),
   furnished: z.boolean().optional().nullable(),
   petsAllowed: z.boolean().optional().nullable(),
-  yearBuilt: z.preprocess((val) => (val === "" || val === null || val === undefined ? null : Number(val)), z.number().int().nullable().optional()),
+  yearBuilt: z.preprocess(
+    (val) =>
+      val === "" || val === null || val === undefined ? null : Number(val),
+    z.number().int().nullable().optional()
+  )
 });
 
 export async function GET(
@@ -71,7 +126,10 @@ export async function GET(
     }
 
     const rates = await getExchangeRates();
-    const diasporaPrice = getDiasporaDisplayPrice(property as unknown as Property, rates);
+    const diasporaPrice = getDiasporaDisplayPrice(
+      property as unknown as Property,
+      rates
+    );
 
     return NextResponse.json({
       success: true,
@@ -110,8 +168,21 @@ export async function PATCH(
           }
         }
       });
+
+      // Submit to IndexNow for search engine notification
+      if (property.status === "AVAILABLE") {
+        submitToIndexNow([`/properties/${property.slug}`]).catch(
+          (error: unknown) => {
+            console.error("Failed to submit to IndexNow:", error);
+          }
+        );
+      }
+
       const rates = await getExchangeRates();
-      const diasporaPrice = getDiasporaDisplayPrice(property as unknown as Property, rates);
+      const diasporaPrice = getDiasporaDisplayPrice(
+        property as unknown as Property,
+        rates
+      );
       return NextResponse.json({
         success: true,
         property: {
@@ -133,8 +204,20 @@ export async function PATCH(
       }
     });
 
+    // Submit to IndexNow for search engine notification
+    if (property.status === "AVAILABLE") {
+      submitToIndexNow([`/properties/${property.slug}`]).catch(
+        (error: unknown) => {
+          console.error("Failed to submit to IndexNow:", error);
+        }
+      );
+    }
+
     const rates = await getExchangeRates();
-    const diasporaPrice = getDiasporaDisplayPrice(property as unknown as Property, rates);
+    const diasporaPrice = getDiasporaDisplayPrice(
+      property as unknown as Property,
+      rates
+    );
 
     return NextResponse.json({
       success: true,

@@ -81,11 +81,21 @@ const propertyCreateSchema = z.object({
   titleType: z.string().nullable().optional(),
   virtualTourUrl: z.string().nullable().optional(),
   duplicatedFrom: z.string().optional().nullable(),
-  estimatedCompletion: z.preprocess((val) => (val === "" || val === null || val === undefined ? null : new Date(val as string)), z.date().nullable().optional()),
+  estimatedCompletion: z.preprocess(
+    (val) =>
+      val === "" || val === null || val === undefined
+        ? null
+        : new Date(val as string),
+    z.date().nullable().optional()
+  ),
   zoningType: z.string().optional().nullable(),
   furnished: z.boolean().optional().nullable(),
   petsAllowed: z.boolean().optional().nullable(),
-  yearBuilt: z.preprocess((val) => (val === "" || val === null || val === undefined ? null : Number(val)), z.number().int().nullable().optional()),
+  yearBuilt: z.preprocess(
+    (val) =>
+      val === "" || val === null || val === undefined ? null : Number(val),
+    z.number().int().nullable().optional()
+  )
 });
 
 export async function GET(request: NextRequest) {

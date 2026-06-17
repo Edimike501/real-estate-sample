@@ -35,7 +35,7 @@ const nextConfig: NextConfig = {
     ];
   }, */
   poweredByHeader: false, // Enforces consistent URL patterns, eliminating the automatic 308 redirect mismatch
-  trailingSlash: true,
+  trailingSlash: false,
   images: {
     remotePatterns: [
       {

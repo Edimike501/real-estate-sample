@@ -1,18 +1,36 @@
+// 📁 app/properties/page.tsx
 import { PropertiesBackButton } from "@/components/property/PropertiesBackButton";
 import { PropertyFilter } from "@/components/property/PropertyFilter";
 import { PropertyGrid } from "@/components/property/PropertyGrid";
 import { JsonLd } from "@/components/seo/JsonLd";
+import type { Metadata } from "next";
 import { Suspense } from "react";
+
+// 1. Pristine Normalized Metadata Architecture
+export const metadata: Metadata = {
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_APP_URL ?? "https://www.opolloluxuries.com"
+  ),
+  title: "All Properties - Opollo Luxury Properties",
+  description:
+    "Search, filter, and browse available luxury real estate listings in Lagos, Nigeria.",
+  alternates: {
+    // Explicitly tells Google that the non-slash URL is the single authoritative path
+    canonical: "/properties"
+  }
+};
 
 export default function PropertiesPage() {
   const baseUrl =
     process.env.NEXT_PUBLIC_APP_URL ?? "https://www.opolloluxuries.com";
 
+  // 2. Align Schema Links with the Canonical Metadata
   const collectionSchema = {
     "@context": "https://schema.org",
     "@type": "CollectionPage",
-    "@id": `${baseUrl}/properties/#collection`,
-    url: `${baseUrl}/properties`,
+    // Cleaned up hash mapping string templates:
+    "@id": `${baseUrl.replace(/\/$/, "")}/properties#collection`,
+    url: `${baseUrl.replace(/\/$/, "")}/properties`,
     name: "All Properties - Opollo Luxury Properties",
     description:
       "Search, filter, and browse available luxury real estate listings in Lagos, Nigeria."

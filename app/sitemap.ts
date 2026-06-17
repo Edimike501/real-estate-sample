@@ -2,18 +2,34 @@ import { prisma } from "@/lib/prisma";
 import { MetadataRoute } from "next";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl =
+  // 1. Force sanitize the baseUrl so it NEVER ends with a trailing slash
+  const rawBaseUrl =
     process.env.NEXT_PUBLIC_APP_URL ?? "https://www.opolloluxuries.com";
+  const baseUrl = rawBaseUrl.replace(/\/$/, "");
 
-  // Base routes
-  const routes = ["", "/properties", "/contact"].map((route) => ({
-    url: `${baseUrl}${route}`,
-    lastModified: new Date().toISOString(),
-    changeFrequency: "weekly" as const,
-    priority: route === "" ? 1.0 : 0.8
-  }));
+  // 2. Clear explicit base routes mappings
+  const baseRoutes = [
+    {
+      url: `${baseUrl}/`, // Explicit root domain slash (Standard XML Requirement)
+      lastModified: new Date().toISOString(),
+      changeFrequency: "daily" as const,
+      priority: 1.0
+    },
+    {
+      url: `${baseUrl}/properties`, // Clean canonical route (No trailing slash)
+      lastModified: new Date().toISOString(),
+      changeFrequency: "daily" as const,
+      priority: 0.9
+    },
+    {
+      url: `${baseUrl}/contact`, // Clean canonical route (No trailing slash)
+      lastModified: new Date().toISOString(),
+      changeFrequency: "daily" as const,
+      priority: 0.8
+    }
+  ];
 
-  // Dynamic property routes
+  // 3. Dynamic property routes pipeline
   let propertyRoutes: MetadataRoute.Sitemap = [];
   try {
     const properties = await prisma.property.findMany({
@@ -22,15 +38,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     });
 
     propertyRoutes = properties.map((property) => ({
+      // Clean, un-slashed parent container path mapping
       url: `${baseUrl}/properties/${property.slug}`,
       lastModified: property.updatedAt.toISOString(),
       changeFrequency: "daily" as const,
-      priority: 0.7
+      priority: 0.9
     }));
   } catch (error) {
-    // Fallback to static routes only on error
+    // Graceful fallback to static core routes on DB connection failures
     console.error("Failed to fetch properties for sitemap:", error);
   }
 
-  return [...routes, ...propertyRoutes];
+  return [...baseRoutes, ...propertyRoutes];
 }

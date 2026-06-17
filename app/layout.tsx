@@ -5,6 +5,7 @@ import { siteMetadata } from "@/metadata/site";
 import "leaflet/dist/leaflet.css";
 import type { Metadata } from "next";
 import { ThemeProvider } from "next-themes";
+import { headers } from "next/headers";
 import Image from "next/image";
 import Script from "next/script";
 import "./globals.css";
@@ -86,6 +87,10 @@ export default async function RootLayout({
 }) {
   // Extract the unique nonce created by your middleware
   // const nonce = (await headers()).get("x-nonce") || undefined;
+  // Grab the generated cryptographic token from the middleware request headers
+  const headerList = await headers();
+  const nonce = headerList.get("x-nonce") || undefined;
+
   const baseUrl =
     process.env.NEXT_PUBLIC_APP_URL ?? "https://www.opolloluxuries.com";
 
@@ -164,7 +169,8 @@ export default async function RootLayout({
         <Script
           type="text/javascript"
           id="yandex-metrica"
-          strategy="afterInteractive">
+          strategy="afterInteractive"
+          nonce={nonce}>
           {`
             (function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
             m[i].l=1*new Date();

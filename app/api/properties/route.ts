@@ -5,6 +5,7 @@ import { z } from "zod";
 import { getDiasporaDisplayPrice, getExchangeRates } from "@/lib/currency";
 import { prisma } from "@/lib/prisma";
 import type { Property } from "@/types";
+import { submitToIndexNow } from "@/lib/indexnow";
 
 const propertyCreateSchema = z.object({
   slug: z.string().min(3),
@@ -81,11 +82,21 @@ const propertyCreateSchema = z.object({
   titleType: z.string().nullable().optional(),
   virtualTourUrl: z.string().nullable().optional(),
   duplicatedFrom: z.string().optional().nullable(),
-  estimatedCompletion: z.preprocess((val) => (val === "" || val === null || val === undefined ? null : new Date(val as string)), z.date().nullable().optional()),
+  estimatedCompletion: z.preprocess(
+    (val) =>
+      val === "" || val === null || val === undefined
+        ? null
+        : new Date(val as string),
+    z.date().nullable().optional()
+  ),
   zoningType: z.string().optional().nullable(),
   furnished: z.boolean().optional().nullable(),
   petsAllowed: z.boolean().optional().nullable(),
-  yearBuilt: z.preprocess((val) => (val === "" || val === null || val === undefined ? null : Number(val)), z.number().int().nullable().optional()),
+  yearBuilt: z.preprocess(
+    (val) =>
+      val === "" || val === null || val === undefined ? null : Number(val),
+    z.number().int().nullable().optional()
+  )
 });
 
 export async function GET(request: NextRequest) {
@@ -240,6 +251,15 @@ export async function POST(request: NextRequest) {
         status: payload.status ?? "AVAILABLE"
       }
     });
+
+    // Submit to IndexNow for search engine notification
+    if (property.status === "AVAILABLE") {
+      submitToIndexNow([`/properties/${property.slug}`]).catch(
+        (error: unknown) => {
+          console.error("Failed to submit to IndexNow:", error);
+        }
+      );
+    }
 
     const rates = await getExchangeRates();
     const diasporaPrice = getDiasporaDisplayPrice(

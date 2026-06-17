@@ -38,7 +38,11 @@ export const metadata: Metadata = {
   ],
   authors: [{ name: siteMetadata.company.owner || siteMetadata.company.name }],
   icons: {
-    icon: "/icon.png",
+    // icon: "/icon.png",
+    icon: [
+      { url: "/favicon.ico", sizes: "any" }, // Standard fallback
+      { url: "/icon-static-32x32.png", type: "image/png", sizes: "32x32" } // Explicit size for Bravebot
+    ],
     shortcut: "/icon.png",
     apple: "/apple-icon.png"
     /* icon: "/og-image.png",

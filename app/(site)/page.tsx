@@ -42,12 +42,14 @@ export default function HomePage() {
       { "@type": "Country", name: "Canada" },
       { "@type": "Country", name: "United Arab Emirates" }
     ],
-    priceRange: "$$$$"
-    // sameAs: [
-    //   siteMetadata.contact.instagram,
-    //   siteMetadata.contact.facebook,
-    //   siteMetadata.contact.linkedin
-    // ]
+    priceRange: "$$$$",
+    sameAs: [
+      siteMetadata.contact.instagram,
+      siteMetadata.contact.tiktok,
+      siteMetadata.contact.facebook,
+      siteMetadata.contact.facebookPage,
+      siteMetadata.contact.linkedin
+    ]
   };
 
   return (

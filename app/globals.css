@@ -173,3 +173,47 @@ button {
 [data-theme="dark"] .glass-effect {
   background-color: rgba(255, 255, 255, 0.05);
 }
+
+/* ============================================================================
+   SONNER TOASTER STYLING
+   ============================================================================ */
+[data-sonner-toast] {
+  --normal-bg: var(--color-bg-secondary) !important;
+  --normal-text: var(--color-text-primary) !important;
+  --normal-border: var(--color-border) !important;
+  background: var(--color-bg-secondary) !important;
+  color: var(--color-text-primary) !important;
+  border-color: var(--color-border) !important;
+  font-family: var(--font-body) !important;
+}
+
+[data-sonner-toast][data-type="success"] {
+  --normal-bg: var(--color-bg-secondary) !important;
+  --normal-text: #10b981 !important;
+  --normal-border: rgba(16, 185, 129, 0.3) !important;
+  background: var(--color-bg-secondary) !important;
+  color: #10b981 !important;
+  border-color: rgba(16, 185, 129, 0.3) !important;
+}
+
+[data-sonner-toast][data-type="error"] {
+  --normal-bg: var(--color-bg-secondary) !important;
+  --normal-text: #ef4444 !important;
+  --normal-border: rgba(239, 68, 68, 0.3) !important;
+  background: var(--color-bg-secondary) !important;
+  color: #ef4444 !important;
+  border-color: rgba(239, 68, 68, 0.3) !important;
+}
+
+[data-sonner-toast][data-type="warning"] {
+  --normal-bg: var(--color-bg-secondary) !important;
+  --normal-text: #f59e0b !important;
+  --normal-border: rgba(245, 158, 11, 0.3) !important;
+  background: var(--color-bg-secondary) !important;
+  color: #f59e0b !important;
+  border-color: rgba(245, 158, 11, 0.3) !important;
+}
+
+[data-sonner-toast] [data-description] {
+  color: var(--color-text-secondary) !important;
+}

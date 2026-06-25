@@ -1,5 +1,6 @@
 import { JsonLd } from "@/components/seo/JsonLd";
 import { QueryProvider } from "@/components/shared/query-provider";
+import { Toaster } from "@/components/ui/sonner";
 import WhatsAppButton from "@/components/ui/WhatsAppButton";
 import { siteMetadata } from "@/metadata/site";
 import "leaflet/dist/leaflet.css";
@@ -136,6 +137,7 @@ export default async function RootLayout({
               message={siteMetadata.contact.whatsappMessage}
               label="Chat on WhatsApp"
             />
+            <Toaster />
             {children}
           </QueryProvider>
         </ThemeProvider>
@@ -161,31 +163,35 @@ export default async function RootLayout({
         )}
 
         {/* Yandex.Metrica Counter */}
-        <Script
-          type="text/javascript"
-          id="yandex-metrica"
-          strategy="afterInteractive">
-          {`
-            (function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
-            m[i].l=1*new Date();
-            for (var j = 0; j < e.length; j++) {if (e[j].r) { return; }}
-            k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)})
-            (window, document, "script", "https://mc.yandex.ru/metrika/tag.js?id=${process.env.NEXT_PUBLIC_YANDEX_METRICA_ID}", "ym");
+        {process.env.NEXT_PUBLIC_YANDEX_METRICA_ID && (
+          <>
+            <Script
+              type="text/javascript"
+              id="yandex-metrica"
+              strategy="afterInteractive">
+              {`
+                (function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
+                m[i].l=1*new Date();
+                for (var j = 0; j < e.length; j++) {if (e[j].r) { return; }}
+                k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)})
+                (window, document, "script", "https://mc.yandex.ru/metrika/tag.js?id=${process.env.NEXT_PUBLIC_YANDEX_METRICA_ID}", "ym");
 
-            ym(${process.env.NEXT_PUBLIC_YANDEX_METRICA_ID}, "init", {
-            ssr:true, webvisor:true, clickmap:true, ecommerce:"dataLayer", referrer: document.referrer, url: location.href, accurateTrackBounce:true, trackLinks:true
-            });
-          `}
-        </Script>
-        <noscript>
-          <div>
-            <Image
-              src={`https://mc.yandex.ru/watch/${process.env.NEXT_PUBLIC_YANDEX_METRICA_ID}`}
-              style={{ position: "absolute", left: "-9999px" }}
-              alt=""
-            />
-          </div>
-        </noscript>
+                ym(${process.env.NEXT_PUBLIC_YANDEX_METRICA_ID}, "init", {
+                ssr:true, webvisor:true, clickmap:true, ecommerce:"dataLayer", referrer: document.referrer, url: location.href, accurateTrackBounce:true, trackLinks:true
+                });
+              `}
+            </Script>
+            <noscript>
+              <div>
+                <img
+                  src={`https://mc.yandex.ru/watch/${process.env.NEXT_PUBLIC_YANDEX_METRICA_ID}`}
+                  style={{ position: "absolute", left: "-9999px" }}
+                  alt=""
+                />
+              </div>
+            </noscript>
+          </>
+        )}
       </body>
     </html>
   );

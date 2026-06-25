@@ -4,6 +4,7 @@ import { Edit, Eye, Trash2, X } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 import { AppSelect } from "@/components/ui/app-select";
 import { useDebounce } from "@/hooks/use-debounce.hooks";
@@ -21,7 +22,6 @@ export function InquiryTable() {
   const [properties, setProperties] = useState<{ id: string; title: string }[]>([]);
   const [selectedPropertyId, setSelectedPropertyId] = useState<string>(urlPropertyId);
   const [updatingIds, setUpdatingIds] = useState<Record<string, boolean>>({});
-  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
 
   const debouncedSearch = useDebounce(searchInput, 400);
 
@@ -66,32 +66,37 @@ export function InquiryTable() {
       });
   }, [debouncedSearch, selectedPropertyId]);
 
-  // Auto-clear toast after 3s
-  useEffect(() => {
-    if (toast) {
-      const timer = setTimeout(() => setToast(null), 3000);
-      return () => clearTimeout(timer);
+  async function performDeleteInquiry(inquiry: Inquiry) {
+    try {
+      const response = await fetch(`/api/inquiries/${inquiry.id}`, {
+        method: "DELETE"
+      });
+
+      if (response.ok) {
+        setInquiries((current) =>
+          current.filter((item) => item.id !== inquiry.id)
+        );
+        toast.success("Inquiry deleted successfully");
+      } else {
+        toast.error("Failed to delete inquiry");
+      }
+    } catch {
+      toast.error("Failed to delete inquiry");
     }
-  }, [toast]);
+  }
 
-  async function deleteInquiry(inquiry: Inquiry) {
-    const confirmed = window.confirm(
-      `Delete inquiry from "${inquiry.guestName}"?`
-    );
-    if (!confirmed) return;
-
-    const response = await fetch(`/api/inquiries/${inquiry.id}`, {
-      method: "DELETE"
+  function deleteInquiry(inquiry: Inquiry) {
+    toast.warning("Confirm Deletion", {
+      description: `Delete inquiry from "${inquiry.guestName}"?`,
+      action: {
+        label: "Delete",
+        onClick: () => void performDeleteInquiry(inquiry),
+      },
+      cancel: {
+        label: "Cancel",
+        onClick: () => {},
+      },
     });
-
-    if (response.ok) {
-      setInquiries((current) =>
-        current.filter((item) => item.id !== inquiry.id)
-      );
-      setToast({ message: "Inquiry deleted successfully", type: "success" });
-    } else {
-      setToast({ message: "Failed to delete inquiry", type: "error" });
-    }
   }
 
   async function updateStatus(inquiry: Inquiry, newStatus: string) {
@@ -117,7 +122,7 @@ export function InquiryTable() {
       if (!response.ok) {
         throw new Error("Failed to update status");
       }
-      setToast({ message: "Inquiry status updated", type: "success" });
+      toast.success("Inquiry status updated");
     } catch (err) {
       console.error(err);
       // Revert status on error
@@ -128,7 +133,7 @@ export function InquiryTable() {
             : item
         )
       );
-      setToast({ message: "Failed to update status. Reverted.", type: "error" });
+      toast.error("Failed to update status. Reverted.");
     } finally {
       setUpdatingIds((prev) => ({ ...prev, [inquiry.id]: false }));
     }
@@ -147,18 +152,6 @@ export function InquiryTable() {
 
   return (
     <div className="space-y-4 rounded-lg border border-border bg-bg-secondary p-5 shadow-sm relative">
-      {toast && (
-        <div
-          className={`fixed bottom-4 right-4 z-[9999] px-4 py-3 rounded-md shadow-lg border text-sm font-semibold transition-all duration-300 ${
-            toast.type === "success"
-              ? "bg-emerald-50 dark:bg-emerald-950 border-emerald-200 dark:border-emerald-900 text-emerald-800 dark:text-emerald-200"
-              : "bg-red-50 dark:bg-red-950 border-red-200 dark:border-red-900 text-red-800 dark:text-red-200"
-          }`}
-        >
-          {toast.message}
-        </div>
-      )}
-
       <div className="flex flex-wrap items-center gap-3">
         <input
           value={searchInput}

@@ -2,6 +2,7 @@
 
 import { Send } from "lucide-react";
 import { FormEvent, useState } from "react";
+import { toast } from "sonner";
 
 type SubmitState = "idle" | "submitting" | "success" | "error";
 
@@ -32,10 +33,14 @@ export default function ContactForm() {
 
       form.reset();
       setSubmitState("success");
-      setStatusMessage("Message sent. We'll be in touch shortly.");
+      const successMsg = "Message sent. We'll be in touch shortly.";
+      setStatusMessage(successMsg);
+      toast.success(successMsg);
     } catch {
       setSubmitState("error");
-      setStatusMessage("Something went wrong. Please try WhatsApp or email.");
+      const errorMsg = "Something went wrong. Please try WhatsApp or email.";
+      setStatusMessage(errorMsg);
+      toast.error(errorMsg);
     }
   }
 

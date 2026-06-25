@@ -3,6 +3,7 @@
 import { FileText, Mail, MessageSquare, Phone, Save, User } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
+import { toast } from "sonner";
 
 import { AppSelect } from "@/components/ui/app-select";
 import { type Inquiry } from "@/types";
@@ -35,6 +36,7 @@ export function InquiryEditForm({ inquiry }: InquiryEditFormProps) {
     });
 
     if (response.ok) {
+      toast.success("Inquiry saved successfully.");
       setStatus("Inquiry saved successfully.");
       router.push(`/admin/dashboard/inquiries/${inquiry.id}`);
       router.refresh();
@@ -42,6 +44,7 @@ export function InquiryEditForm({ inquiry }: InquiryEditFormProps) {
       return;
     }
 
+    toast.error("Failed to save inquiry.");
     setStatus("Failed to save inquiry.");
     setLoading(false);
   }

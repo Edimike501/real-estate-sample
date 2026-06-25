@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 import { useDebounce } from "@/hooks/use-debounce.hooks";
 import { type Property } from "@/types";
@@ -18,38 +19,41 @@ export function PropertyTable() {
   const [searchInput, setSearchInput] = useState("");
   const [properties, setProperties] = useState<Property[]>([]);
   const [duplicatingId, setDuplicatingId] = useState<string | null>(null);
-  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
 
   const debouncedSearch = useDebounce(searchInput, 400);
 
-  // Auto-clear toast after 3s
-  useEffect(() => {
-    if (toast) {
-      const timer = setTimeout(() => setToast(null), 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [toast]);
+  async function performDeleteProperty(property: Property) {
+    try {
+      const response = await fetch(`/api/properties/${property.id}`, {
+        method: "DELETE",
+      });
 
-  async function deleteProperty(property: Property) {
-    const confirmed = window.confirm(`Archive "${property.title}"?`);
-    if (!confirmed) return;
-
-    const response = await fetch(`/api/properties/${property.id}`, {
-      method: "DELETE",
-    });
-
-    if (response.ok) {
-      setProperties((current) => current.filter((item) => item.id !== property.id));
-      setToast({ message: "Property archived successfully.", type: "success" });
-    } else {
-      setToast({ message: "Failed to archive property.", type: "error" });
+      if (response.ok) {
+        setProperties((current) => current.filter((item) => item.id !== property.id));
+        toast.success("Property archived successfully.");
+      } else {
+        toast.error("Failed to archive property.");
+      }
+    } catch {
+      toast.error("Failed to archive property.");
     }
   }
 
-  async function restoreProperty(property: Property) {
-    const confirmed = window.confirm(`Restore "${property.title}"?`);
-    if (!confirmed) return;
+  function deleteProperty(property: Property) {
+    toast.warning("Confirm Archiving", {
+      description: `Archive "${property.title}"?`,
+      action: {
+        label: "Archive",
+        onClick: () => void performDeleteProperty(property),
+      },
+      cancel: {
+        label: "Cancel",
+        onClick: () => {},
+      },
+    });
+  }
 
+  async function performRestoreProperty(property: Property) {
     try {
       const response = await fetch(`/api/properties/${property.id}`, {
         method: "PATCH",
@@ -59,14 +63,28 @@ export function PropertyTable() {
 
       if (response.ok) {
         setProperties((current) => current.filter((item) => item.id !== property.id));
-        setToast({ message: "Property restored successfully.", type: "success" });
+        toast.success("Property restored successfully.");
       } else {
-        setToast({ message: "Failed to restore property.", type: "error" });
+        toast.error("Failed to restore property.");
       }
     } catch (err) {
       console.error(err);
-      setToast({ message: "An error occurred while restoring property.", type: "error" });
+      toast.error("An error occurred while restoring property.");
     }
+  }
+
+  function restoreProperty(property: Property) {
+    toast.warning("Confirm Restoration", {
+      description: `Restore "${property.title}"?`,
+      action: {
+        label: "Restore",
+        onClick: () => void performRestoreProperty(property),
+      },
+      cancel: {
+        label: "Cancel",
+        onClick: () => {},
+      },
+    });
   }
 
   async function duplicateProperty(propertyId: string) {
@@ -77,14 +95,14 @@ export function PropertyTable() {
       });
       const data = await response.json();
       if (response.ok && data.success && data.property) {
-        setToast({ message: "Property duplicated. Review and update details before publishing.", type: "success" });
+        toast.success("Property duplicated. Review and update details before publishing.");
         router.push(`/admin/dashboard/properties/${data.property.id}/edit`);
       } else {
-        setToast({ message: data.error || "Failed to duplicate property.", type: "error" });
+        toast.error(data.error || "Failed to duplicate property.");
       }
     } catch (err) {
       console.error(err);
-      setToast({ message: "An error occurred while duplicating property.", type: "error" });
+      toast.error("An error occurred while duplicating property.");
     } finally {
       setDuplicatingId(null);
     }
@@ -110,18 +128,6 @@ export function PropertyTable() {
 
   return (
     <div className="space-y-4 rounded-lg border border-border bg-bg-secondary p-5 shadow-sm relative">
-      {toast && (
-        <div
-          className={`fixed bottom-4 right-4 z-[9999] px-4 py-3 rounded-md shadow-lg border text-sm font-semibold transition-all duration-300 ${
-            toast.type === "success"
-              ? "bg-emerald-50 dark:bg-emerald-950 border-emerald-200 dark:border-emerald-900 text-emerald-800 dark:text-emerald-200"
-              : "bg-red-50 dark:bg-red-950 border-red-200 dark:border-red-900 text-red-800 dark:text-red-200"
-          }`}
-        >
-          {toast.message}
-        </div>
-      )}
-
       {/* Tabs Layout */}
       <div className="flex border-b border-border">
         <button

@@ -3,6 +3,7 @@
 import { Edit, Eye, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 import { useDebounce } from "@/hooks/use-debounce.hooks";
 import { type User } from "@/types";
@@ -13,17 +14,35 @@ export function UserTable() {
   const [users, setUsers] = useState<User[]>([]);
   const debouncedSearch = useDebounce(searchInput, 400);
 
-  async function deleteUser(user: User) {
-    const confirmed = window.confirm(`Delete "${user.name}"?`);
-    if (!confirmed) return;
+  async function performDeleteUser(user: User) {
+    try {
+      const response = await fetch(`/api/users/${user.id}`, {
+        method: "DELETE",
+      });
 
-    const response = await fetch(`/api/users/${user.id}`, {
-      method: "DELETE",
-    });
-
-    if (response.ok) {
-      setUsers((current) => current.filter((item) => item.id !== user.id));
+      if (response.ok) {
+        setUsers((current) => current.filter((item) => item.id !== user.id));
+        toast.success("User deleted successfully.");
+      } else {
+        toast.error("Failed to delete user.");
+      }
+    } catch {
+      toast.error("Failed to delete user.");
     }
+  }
+
+  function deleteUser(user: User) {
+    toast.warning("Confirm Deletion", {
+      description: `Delete "${user.name}"?`,
+      action: {
+        label: "Delete",
+        onClick: () => void performDeleteUser(user),
+      },
+      cancel: {
+        label: "Cancel",
+        onClick: () => {},
+      },
+    });
   }
 
   useEffect(() => {

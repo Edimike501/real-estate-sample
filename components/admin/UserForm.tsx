@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
+import { toast } from "sonner";
 
 import { AppSelect } from "@/components/ui/app-select";
 import { formatEnum } from "@/lib/utils";
@@ -50,9 +51,9 @@ export function UserForm({ user }: UserFormProps) {
       const data = await response.json().catch(() => null);
 
       if (response.ok) {
-        setStatus(
-          isEditing ? "User saved successfully." : "User created successfully."
-        );
+        const successMsg = isEditing ? "User saved successfully." : "User created successfully.";
+        setStatus(successMsg);
+        toast.success(successMsg);
         if (isEditing) {
           router.push(`/admin/dashboard/users/${user?.id}`);
         } else {
@@ -62,11 +63,13 @@ export function UserForm({ user }: UserFormProps) {
         return;
       }
 
-      setStatus(
-        data?.error ?? `Failed to ${isEditing ? "save" : "create"} user.`
-      );
+      const errorMsg = data?.error ?? `Failed to ${isEditing ? "save" : "create"} user.`;
+      setStatus(errorMsg);
+      toast.error(errorMsg);
     } catch (e) {
-      setStatus("An unexpected error occurred. Please try again.");
+      const errorMsg = "An unexpected error occurred. Please try again.";
+      setStatus(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setLoading(false);
     }

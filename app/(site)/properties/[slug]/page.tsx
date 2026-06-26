@@ -39,7 +39,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const optimizedImage = optimizeCloudinaryUrl(ogImage);
 
   // Build location string
-  const location = [property.city, property.state].filter(Boolean).join(", ");
+  const location = [property.city, property.lga, property.state].filter(Boolean).join(", ");
 
   // Build OG description with price, specs, and location
   const ogDescription = buildPropertyDescription(property);
@@ -105,7 +105,7 @@ export default async function PropertyDetailPage({ params }: Props) {
     ? getEmbedUrl(property.virtualTourUrl)
     : null;
 
-  const locationStr = [property.city, property.state, property.country]
+  const locationStr = [property.city, property.lga, property.state, property.country]
     .filter(Boolean)
     .join(", ");
 

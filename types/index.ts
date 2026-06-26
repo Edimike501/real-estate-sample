@@ -150,6 +150,7 @@ export interface Property {
   isPinned: boolean;
   address?: string | null;
   landmark?: string | null;
+  lga?: string | null;
   city: string;
   state: string;
   country: string;

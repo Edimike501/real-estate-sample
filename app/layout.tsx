@@ -1,12 +1,13 @@
+/* eslint-disable @next/next/no-img-element */
 import { JsonLd } from "@/components/seo/JsonLd";
 import { QueryProvider } from "@/components/shared/query-provider";
+import { Toaster } from "@/components/ui/sonner";
 import WhatsAppButton from "@/components/ui/WhatsAppButton";
 import { siteMetadata } from "@/metadata/site";
 import "leaflet/dist/leaflet.css";
 import type { Metadata } from "next";
 import { ThemeProvider } from "next-themes";
 import { headers } from "next/headers";
-import Image from "next/image";
 import Script from "next/script";
 import "./globals.css";
 
@@ -33,6 +34,7 @@ export const metadata: Metadata = {
     "Opollo", // ← ADD brand name
     "Opollo Luxury", // ← ADD brand name
     "Opollo Luxury Properties", // ← ADD brand name
+    "Opollo Luxury Properties Ltd", // ← ADD brand name
     "buy house Lagos", // ← ADD high-intent keyword
     "Nigerian Diaspora real estate" // ← ADD Diaspora keyword
   ],
@@ -145,6 +147,7 @@ export default async function RootLayout({
               message={siteMetadata.contact.whatsappMessage}
               label="Chat on WhatsApp"
             />
+            <Toaster />
             {children}
           </QueryProvider>
         </ThemeProvider>
@@ -182,14 +185,14 @@ export default async function RootLayout({
             k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)})
             (window, document, "script", "https://mc.yandex.ru/metrika/tag.js?id=${process.env.NEXT_PUBLIC_YANDEX_METRICA_ID}", "ym");
 
-            ym(${process.env.NEXT_PUBLIC_YANDEX_METRICA_ID}, "init", {
-            ssr:true, webvisor:true, clickmap:true, ecommerce:"dataLayer", referrer: document.referrer, url: location.href, accurateTrackBounce:true, trackLinks:true
-            });
-          `}
+                ym(${process.env.NEXT_PUBLIC_YANDEX_METRICA_ID}, "init", {
+                ssr:true, webvisor:true, clickmap:true, ecommerce:"dataLayer", referrer: document.referrer, url: location.href, accurateTrackBounce:true, trackLinks:true
+                });
+              `}
         </Script>
         <noscript>
           <div>
-            <Image
+            <img
               src={`https://mc.yandex.ru/watch/${process.env.NEXT_PUBLIC_YANDEX_METRICA_ID}`}
               style={{ position: "absolute", left: "-9999px" }}
               alt=""

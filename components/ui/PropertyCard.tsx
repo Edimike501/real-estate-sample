@@ -45,7 +45,7 @@ export default function PropertyCard({ property }: PropertyCardProps) {
   const propertyUrl = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/properties/${property.slug}`;
   const locationStr =
     property.location ||
-    [property.city, property.state].filter(Boolean).join(", ");
+    [property.city, property.lga, property.state].filter(Boolean).join(", ");
 
   const whatsappLink = buildWhatsAppLink({
     guestName: session?.name || "Guest",
@@ -86,7 +86,7 @@ export default function PropertyCard({ property }: PropertyCardProps) {
             <h3 className="text-xl font-display font-bold text-text-primary mb-1">
               {property.title}
             </h3>
-            <p className="text-text-muted text-sm">{property.location}</p>
+            <p className="text-text-muted text-sm">{property.location || locationStr}</p>
           </div>
 
           <p className="text-2xl font-bold text-accent">{property.price}</p>
@@ -126,6 +126,21 @@ export default function PropertyCard({ property }: PropertyCardProps) {
               href={whatsappLink}
               target="_blank"
               rel="noopener noreferrer"
+              onClick={() => {
+                fetch("/api/inquiries", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    guestName: session?.name || "Guest",
+                    guestPhone: session?.phone || "0000000000",
+                    guestEmail: session?.email || undefined,
+                    propertyId: property.id,
+                    source: InquirySource.FEATURED_CARD,
+                  }),
+                }).catch((err) => {
+                  console.error("Error submitting property card inquiry:", err);
+                });
+              }}
               className="inline-flex w-full items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-lg transition-all px-6 py-3 text-sm">
               <MessageCircle className="w-5 h-5" />
               Enquire Now

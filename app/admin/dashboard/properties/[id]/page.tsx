@@ -53,7 +53,7 @@ export default async function PropertyDetailPage({
             {property.title}
           </h1>
           <p className="text-text-secondary">
-            {property.city}, {property.state}, {property.country}
+            {[property.city, property.lga, property.state, property.country].filter(Boolean).join(", ")}
           </p>
         </div>
 

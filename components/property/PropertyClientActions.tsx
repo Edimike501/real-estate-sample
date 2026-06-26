@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
+import { toast } from "sonner";
 import BookmarkButton from "./BookmarkButton";
 import SharePropertyButton from "./SharePropertyButton";
 import { useGuestSession } from "@/hooks/useGuestSession";
@@ -70,6 +71,7 @@ export default function PropertyClientActions({
 
       const data = await response.json();
       if (response.ok && data.success && data.whatsappUrl) {
+        toast.success("Inquiry submitted! Redirecting to WhatsApp...");
         window.open(data.whatsappUrl, "_blank", "noopener,noreferrer");
       } else {
         // Fallback directly to WhatsApp build if API fails
@@ -81,10 +83,12 @@ export default function PropertyClientActions({
           propertyUrl,
           source: InquirySource.PROPERTY_PAGE,
         });
+        toast.success("Inquiry submitted! Redirecting to WhatsApp...");
         window.open(fallbackUrl, "_blank", "noopener,noreferrer");
       }
     } catch (err) {
       console.error("Error submitting sticky WhatsApp inquiry:", err);
+      toast.error("Failed to submit inquiry. Please try again.");
     } finally {
       setIsSubmitting(false);
     }

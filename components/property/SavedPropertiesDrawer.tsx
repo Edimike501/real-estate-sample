@@ -9,6 +9,7 @@ import { BackButton } from "@/components/ui/BackButton";
 import { type Property } from "@/types";
 import { MediaType } from "@/types/enums";
 import { motion, AnimatePresence } from "framer-motion";
+import { toast } from "sonner";
 
 interface SavedPropertiesDrawerProps {
   isOpen: boolean;
@@ -182,9 +183,20 @@ export default function SavedPropertiesDrawer({ isOpen, onClose }: SavedProperti
               <div className="p-4 border-t border-border bg-bg-secondary/20 space-y-2">
                 <button
                   onClick={() => {
-                    if (confirm("Are you sure you want to clear all bookmarks?")) {
-                      clearBookmarks();
-                    }
+                    toast.warning("Confirm Action", {
+                      description: "Are you sure you want to clear all bookmarks?",
+                      action: {
+                        label: "Clear All",
+                        onClick: () => {
+                          clearBookmarks();
+                          toast.success("Bookmarks cleared successfully.");
+                        },
+                      },
+                      cancel: {
+                        label: "Cancel",
+                        onClick: () => {},
+                      },
+                    });
                   }}
                   className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-border bg-bg-primary px-4 py-2.5 text-xs font-semibold text-accent hover:bg-bg-secondary transition cursor-pointer"
                 >

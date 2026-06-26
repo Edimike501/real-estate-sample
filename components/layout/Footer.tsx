@@ -1,7 +1,7 @@
-import Link from 'next/link'
-import { siteMetadata } from '@/metadata/site'
-import Logo from '@/components/ui/Logo'
-import { Share2, Heart } from 'lucide-react'
+import Logo from "@/components/ui/Logo";
+import { siteMetadata } from "@/metadata/site";
+import { Heart, Share2 } from "lucide-react";
+import Link from "next/link";
 
 export default function Footer() {
   return (
@@ -90,9 +90,17 @@ export default function Footer() {
 
         <div className="mt-8 border-t border-border pt-6 text-sm text-text-muted flex items-center justify-between">
           <div>{siteMetadata.footer.copyright}</div>
-          <div>Designed with care — Opollo Luxury Properties</div>
+          <div>
+            <Link
+              href="https://codewithmyke.vercel.app"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-text-secondary hover:text-accent underline decoration-dotted underline-offset-4 transition-colors">
+              Designed with care — Osinachi Michael
+            </Link>
+          </div>
         </div>
       </div>
     </footer>
-  )
+  );
 }

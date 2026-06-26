@@ -8,7 +8,7 @@ import type { Property } from "@/types";
 import { submitToIndexNow } from "@/lib/indexnow";
 
 const propertyCreateSchema = z.object({
-  slug: z.string().min(3),
+  slug: z.string().min(3).optional(),
   title: z.string().min(3),
   description: z.string().min(10),
   listingType: z.enum(["SALE", "RENTAL", "LAND", "DEVELOPMENT"]),
@@ -20,6 +20,7 @@ const propertyCreateSchema = z.object({
   country: z.string().default("Nigeria"),
   address: z.string().optional().nullable(),
   landmark: z.string().optional().nullable(),
+  lga: z.string().optional().nullable(),
   latitude: z.number().optional().nullable(),
   longitude: z.number().optional().nullable(),
   bedrooms: z.preprocess(
@@ -90,8 +91,26 @@ const propertyCreateSchema = z.object({
     z.date().nullable().optional()
   ),
   zoningType: z.string().optional().nullable(),
-  furnished: z.boolean().optional().nullable(),
-  petsAllowed: z.boolean().optional().nullable(),
+  furnished: z.preprocess(
+    (val) => {
+      if (val === "true" || val === true) return true;
+      if (val === "false" || val === false) return false;
+      return null;
+    },
+    z.boolean().nullable().optional()
+  ),
+  petsAllowed: z.preprocess(
+    (val) => {
+      if (val === "true" || val === true) return true;
+      if (val === "false" || val === false) return false;
+      return null;
+    },
+    z.boolean().nullable().optional()
+  ),
+  negotiationStatus: z.preprocess(
+    (val) => (val === null || val === "" ? undefined : val),
+    z.enum(["FIXED", "NEGOTIABLE", "CONTACT_FOR_PRICE"]).optional()
+  ),
   yearBuilt: z.preprocess(
     (val) =>
       val === "" || val === null || val === undefined ? null : Number(val),
@@ -179,6 +198,7 @@ export async function GET(request: NextRequest) {
             { title: { contains: search, mode: "insensitive" } },
             { description: { contains: search, mode: "insensitive" } },
             { city: { contains: search, mode: "insensitive" } },
+            { lga: { contains: search, mode: "insensitive" } },
             { landmark: { contains: search, mode: "insensitive" } }
           ]
         }
@@ -240,14 +260,46 @@ export async function GET(request: NextRequest) {
   }
 }
 
+function slugify(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[^\w\s-]/g, "")
+    .replace(/[\s_]+/g, "-")
+    .replace(/--+/g, "-")
+    .replace(/^-+/, "")
+    .replace(/-+$/, "");
+}
+
+async function generateUniqueSlug(title: string, excludePropertyId?: string): Promise<string> {
+  const baseSlug = slugify(title) || "property";
+  let slug = baseSlug;
+  let counter = 1;
+
+  while (true) {
+    const existing = await prisma.property.findUnique({
+      where: { slug }
+    });
+
+    if (!existing || (excludePropertyId && existing.id === excludePropertyId)) {
+      return slug;
+    }
+
+    slug = `${baseSlug}-${counter}`;
+    counter++;
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const payload = propertyCreateSchema.parse(body);
 
+    const finalSlug = await generateUniqueSlug(payload.title);
+
     const property = await prisma.property.create({
       data: {
         ...payload,
+        slug: finalSlug,
         status: payload.status ?? "AVAILABLE"
       }
     });

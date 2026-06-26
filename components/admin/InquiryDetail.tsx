@@ -28,6 +28,7 @@ type InquiryDetailInquiry = Omit<Inquiry, "property"> & {
     title: string;
     slug: string;
     city: string;
+    lga?: string | null;
     state: string;
   } | null;
 };
@@ -233,7 +234,7 @@ export function InquiryDetail({ inquiry }: InquiryDetailProps) {
                     {inquiry.property.title}
                   </h4>
                   <p className="text-xs text-text-muted mt-0.5 font-normal">
-                    {inquiry.property.city}, {inquiry.property.state}
+                    {[inquiry.property.city, inquiry.property.lga, inquiry.property.state].filter(Boolean).join(", ")}
                   </p>
                 </div>
                 

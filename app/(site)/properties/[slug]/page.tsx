@@ -187,9 +187,9 @@ export default async function PropertyDetailPage({ params }: Props) {
             />
           </div>
 
-          {/* RIGHT COLUMN - Sticky Sidebar (hidden on mobile) */}
-          <div className="hidden lg:block">
-            <div className="sticky top-8 space-y-6">
+          {/* RIGHT COLUMN - Sticky Sidebar (now visible on mobile) */}
+          <div className="block">
+            <div className="lg:sticky lg:top-8 space-y-6">
               {/* Enquiry Card */}
               <div className="rounded-lg border border-border bg-bg-secondary p-5">
                 <h2 className="mb-4 text-lg font-semibold text-text-primary">

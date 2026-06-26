@@ -99,12 +99,6 @@ export const CONDITIONAL_PROPERTY_FIELDS: Record<
       placeholder: "e.g. 5"
     },
     {
-      label: "Number of Toilets",
-      name: "toilets",
-      type: "number",
-      placeholder: "e.g. 5"
-    },
-    {
       label: "Property Internal Size (Sqm)",
       name: "sizeSqm",
       type: "number",
@@ -282,6 +276,28 @@ type UploadResponse = PropertyMedia & {
   error?: string;
 };
 
+interface NominatimSuggestion {
+  lat: string;
+  lon: string;
+  display_name?: string;
+  address?: {
+    road?: string;
+    house_number?: string;
+    suburb?: string;
+    neighbourhood?: string;
+    city?: string;
+    town?: string;
+    village?: string;
+    city_district?: string;
+    county?: string;
+    state?: string;
+    country?: string;
+    postcode?: string;
+    quarter?: string;
+    amenity?: string;
+  };
+}
+
 function createId() {
   return typeof crypto !== "undefined" && "randomUUID" in crypto
     ? crypto.randomUUID()
@@ -397,7 +413,7 @@ export function PropertyForm({
       lat: number,
       lng: number,
       reverseGeocodedAddress: string,
-      addressDetails?: any,
+      addressDetails?: NominatimSuggestion["address"],
       isInitial?: boolean
     ) => {
       setLatitude(lat);
@@ -455,28 +471,6 @@ export function PropertyForm({
     },
     []
   );
-
-  interface NominatimSuggestion {
-    lat: string;
-    lon: string;
-    display_name?: string;
-    address?: {
-      road?: string;
-      house_number?: string;
-      suburb?: string;
-      neighbourhood?: string;
-      city?: string;
-      town?: string;
-      village?: string;
-      city_district?: string;
-      county?: string;
-      state?: string;
-      country?: string;
-      postcode?: string;
-      quarter?: string;
-      amenity?: string;
-    };
-  }
 
   const [isSearchingLocation, setIsSearchingLocation] = useState(false);
   const [locationSuggestions, setLocationSuggestions] = useState<
@@ -911,6 +905,13 @@ export function PropertyForm({
           }
         }
       }
+    }
+
+    // Set toilets value to mirror bathrooms value for backend logic
+    if (payload.bathrooms !== undefined && payload.bathrooms !== null && payload.bathrooms !== "") {
+      payload.toilets = Number(payload.bathrooms);
+    } else {
+      payload.toilets = null;
     }
 
     const response = await fetch(

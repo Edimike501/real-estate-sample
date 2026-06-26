@@ -34,8 +34,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     };
   }
 
-  // Get first media item or fallback to default OG image
-  const ogImage = property.media?.[0]?.url ?? "/og-image.jpg";
+  // Get first image media item or fallback to default OG image
+  const firstImage = property.media?.find((m) => m.mediaType === "IMAGE");
+  const ogImage = firstImage?.url ?? property.media?.[0]?.url ?? "/og-image.jpg";
   const optimizedImage = optimizeCloudinaryUrl(ogImage);
 
   // Build location string

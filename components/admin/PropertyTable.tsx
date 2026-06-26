@@ -184,13 +184,19 @@ export function PropertyTable() {
                   }`}
                 >
                   <td className="px-4 py-3.5 whitespace-nowrap">
-                    <Image
-                      src={property.media?.[0]?.thumbnailUrl ?? property.media?.[0]?.url ?? "/images/property-placeholder.png"}
-                      alt={property.media?.[0]?.altText ?? property.title}
-                      width={80}
-                      height={56}
-                      className="h-12 w-16 rounded-md border border-border object-cover bg-bg-secondary"
-                    />
+                    {(() => {
+                      const firstImage = property.media?.find((m) => m.mediaType === "IMAGE");
+                      const src = firstImage?.thumbnailUrl ?? firstImage?.url ?? "/images/property-placeholder.png";
+                      return (
+                        <Image
+                          src={src}
+                          alt={firstImage?.altText ?? property.title}
+                          width={80}
+                          height={56}
+                          className="h-12 w-16 rounded-md border border-border object-cover bg-bg-secondary"
+                        />
+                      );
+                    })()}
                   </td>
                   <td className="px-4 py-3.5 text-text-primary font-semibold max-w-xs truncate" title={property.title}>
                     {property.title}

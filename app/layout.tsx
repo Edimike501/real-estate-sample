@@ -7,7 +7,6 @@ import "leaflet/dist/leaflet.css";
 import type { Metadata } from "next";
 import { ThemeProvider } from "next-themes";
 import { headers } from "next/headers";
-import Image from "next/image";
 import Script from "next/script";
 import "./globals.css";
 
@@ -188,18 +187,16 @@ export default async function RootLayout({
                 ssr:true, webvisor:true, clickmap:true, ecommerce:"dataLayer", referrer: document.referrer, url: location.href, accurateTrackBounce:true, trackLinks:true
                 });
               `}
-            </Script>
-            <noscript>
-              <div>
-                <img
-                  src={`https://mc.yandex.ru/watch/${process.env.NEXT_PUBLIC_YANDEX_METRICA_ID}`}
-                  style={{ position: "absolute", left: "-9999px" }}
-                  alt=""
-                />
-              </div>
-            </noscript>
-          </>
-        )}
+        </Script>
+        <noscript>
+          <div>
+            <img
+              src={`https://mc.yandex.ru/watch/${process.env.NEXT_PUBLIC_YANDEX_METRICA_ID}`}
+              style={{ position: "absolute", left: "-9999px" }}
+              alt=""
+            />
+          </div>
+        </noscript>
       </body>
     </html>
   );

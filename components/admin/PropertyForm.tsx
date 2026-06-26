@@ -1,9 +1,9 @@
 "use client";
 
-import { toast } from "sonner";
 import {
   ImagePlus,
   Loader2,
+  MapPin,
   Trash2,
   UploadCloud,
   Video,
@@ -20,6 +20,7 @@ import {
   useRef,
   useState
 } from "react";
+import { toast } from "sonner";
 
 import { AppSelect } from "@/components/ui/app-select";
 import { formatEnum } from "@/lib/utils";
@@ -309,9 +310,19 @@ function formatDateForInput(dateVal: Date | string | undefined | null) {
   return date.toISOString().split("T")[0];
 }
 
+function slugify(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[^\w\s-]/g, "")
+    .replace(/[\s_]+/g, "-")
+    .replace(/--+/g, "-")
+    .replace(/^-+/, "")
+    .replace(/-+$/, "");
+}
+
 export function PropertyForm({
   property,
-  onRegisterNavigationGuard,
+  onRegisterNavigationGuard
 }: PropertyFormProps) {
   const router = useRouter();
   const imageInputRef = useRef<HTMLInputElement>(null);
@@ -332,18 +343,46 @@ export function PropertyForm({
   );
   const [address, setAddress] = useState<string>(property?.address ?? "");
   const [landmark, setLandmark] = useState<string>(property?.landmark ?? "");
+  const [title, setTitle] = useState<string>(property?.title ?? "");
+  const [slug, setSlug] = useState<string>(property?.slug ?? "");
+  const [city, setCity] = useState<string>(property?.city ?? "");
+  const [lga, setLga] = useState<string>(property?.lga ?? "");
+  const [stateName, setStateName] = useState<string>(
+    property?.state ?? "Lagos"
+  );
+  const [country, setCountry] = useState<string>(
+    property?.country ?? "Nigeria"
+  );
+
+  const suggestionsRef = useRef<HTMLDivElement>(null);
+
   const [listingType, setListingType] = useState<ListingType>(
     (property?.listingType as ListingType) ?? ListingType.SALE
   );
-  const [currentProperty, setCurrentProperty] = useState<Property | undefined>(property);
+  const [currentProperty, setCurrentProperty] = useState<Property | undefined>(
+    property
+  );
   const isEditing = Boolean(currentProperty);
 
-  useEffect(() => {
+  // Adjust state during render when property changes to avoid cascading renders
+  const [prevProperty, setPrevProperty] = useState<Property | undefined>(
+    property
+  );
+  if (property !== prevProperty) {
+    setPrevProperty(property);
     setCurrentProperty(property);
-    if (property?.media) {
-      setMedia(property.media);
+    if (property) {
+      setTitle(property.title ?? "");
+      setSlug(property.slug ?? "");
+      setCity(property.city ?? "");
+      setLga(property.lga ?? "");
+      setStateName(property.state ?? "Lagos");
+      setCountry(property.country ?? "Nigeria");
+      if (property.media) {
+        setMedia(property.media);
+      }
     }
-  }, [property]);
+  }
 
   const hasTourVideo =
     media.some((item) => item.mediaType === MediaType.TOUR) ||
@@ -354,7 +393,13 @@ export function PropertyForm({
   const pendingNavigationRef = useRef<PendingNavigation | null>(null);
 
   const handleLocationChange = useCallback(
-    (lat: number, lng: number, reverseGeocodedAddress: string, isInitial?: boolean) => {
+    (
+      lat: number,
+      lng: number,
+      reverseGeocodedAddress: string,
+      addressDetails?: any,
+      isInitial?: boolean
+    ) => {
       setLatitude(lat);
       setLongitude(lng);
       if (!isInitial) {
@@ -369,6 +414,44 @@ export function PropertyForm({
           return prev;
         });
       }
+
+      if (addressDetails) {
+        const suggestionCity =
+          addressDetails.city ||
+          addressDetails.town ||
+          addressDetails.village ||
+          addressDetails.city_district ||
+          "";
+        if (suggestionCity) {
+          setCity(suggestionCity);
+        }
+
+        const suggestionLga = addressDetails.city_district || addressDetails.county || "";
+        if (suggestionLga) {
+          setLga(suggestionLga);
+        }
+
+        const suggestionState = addressDetails.state || "";
+        if (suggestionState) {
+          const cleanState = suggestionState.replace(/\s+State$/i, "");
+          setStateName(cleanState);
+        }
+
+        const suggestionCountry = addressDetails.country || "";
+        if (suggestionCountry) {
+          setCountry(suggestionCountry);
+        }
+
+        const area =
+          addressDetails.suburb ||
+          addressDetails.neighbourhood ||
+          addressDetails.quarter ||
+          addressDetails.amenity ||
+          "";
+        if (area) {
+          setLandmark(area);
+        }
+      }
     },
     []
   );
@@ -377,48 +460,133 @@ export function PropertyForm({
     lat: string;
     lon: string;
     display_name?: string;
+    address?: {
+      road?: string;
+      house_number?: string;
+      suburb?: string;
+      neighbourhood?: string;
+      city?: string;
+      town?: string;
+      village?: string;
+      city_district?: string;
+      county?: string;
+      state?: string;
+      country?: string;
+      postcode?: string;
+      quarter?: string;
+      amenity?: string;
+    };
   }
 
   const [isSearchingLocation, setIsSearchingLocation] = useState(false);
-  const [locationSuggestions, setLocationSuggestions] = useState<NominatimSuggestion[]>([]);
+  const [locationSuggestions, setLocationSuggestions] = useState<
+    NominatimSuggestion[]
+  >([]);
 
-  const applySuggestedLocation = useCallback((suggestion: NominatimSuggestion) => {
-    const lat = parseFloat(suggestion.lat);
-    const lon = parseFloat(suggestion.lon);
-    setLatitude(lat);
-    setLongitude(lon);
-    setIsDirty(true);
-
-    if (suggestion.display_name) {
-      setAddress(suggestion.display_name);
+  // Close suggestions dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        suggestionsRef.current &&
+        !suggestionsRef.current.contains(event.target as Node)
+      ) {
+        setLocationSuggestions([]);
+      }
     }
-    setLocationSuggestions([]);
-    toast.success("Location updated on map.");
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
   }, []);
+
+  const applySuggestedLocation = useCallback(
+    (suggestion: NominatimSuggestion) => {
+      const lat = parseFloat(suggestion.lat);
+      const lon = parseFloat(suggestion.lon);
+      setLatitude(lat);
+      setLongitude(lon);
+      setIsDirty(true);
+
+      const addrObj = suggestion.address;
+      if (addrObj) {
+        // 1. Determine City
+        const suggestionCity =
+          addrObj.city ||
+          addrObj.town ||
+          addrObj.village ||
+          addrObj.city_district ||
+          "";
+        if (suggestionCity) {
+          setCity(suggestionCity);
+        }
+
+        // Determine LGA
+        const suggestionLga = addrObj.city_district || addrObj.county || "";
+        if (suggestionLga) {
+          setLga(suggestionLga);
+        }
+
+        // 2. Determine State
+        const suggestionState = addrObj.state || "";
+        if (suggestionState) {
+          const cleanState = suggestionState.replace(/\s+State$/i, "");
+          setStateName(cleanState);
+        }
+
+        // 3. Determine Country
+        const suggestionCountry = addrObj.country || "";
+        if (suggestionCountry) {
+          setCountry(suggestionCountry);
+        }
+
+        // 4. Determine Street Address
+        let streetAddr = "";
+        if (addrObj.road) {
+          streetAddr = addrObj.house_number
+            ? `${addrObj.house_number} ${addrObj.road}`
+            : addrObj.road;
+        } else {
+          streetAddr = suggestion.display_name?.split(",")[0] || "";
+        }
+        setAddress(streetAddr);
+
+        // 5. Determine Landmark / Area
+        const area =
+          addrObj.suburb ||
+          addrObj.neighbourhood ||
+          addrObj.quarter ||
+          addrObj.amenity ||
+          "";
+        setLandmark(area);
+      } else {
+        if (suggestion.display_name) {
+          setAddress(suggestion.display_name);
+        }
+      }
+
+      setLocationSuggestions([]);
+      toast.success("Location and address fields updated.");
+    },
+    []
+  );
 
   const handleGeocodeSearch = useCallback(async () => {
     if (!address) return;
     setIsSearchingLocation(true);
     setLocationSuggestions([]);
 
-    const cityVal = (document.getElementById("city") as HTMLInputElement)?.value || "";
-    const stateVal = (document.getElementById("state") as HTMLInputElement)?.value || "";
-    const countryVal = (document.getElementById("country") as HTMLInputElement)?.value || "";
-
-    const queryParts = [address, cityVal, stateVal, countryVal].filter(Boolean);
+    const queryParts = [address, city, stateName, country].filter(Boolean);
     const searchQuery = encodeURIComponent(queryParts.join(", "));
 
     try {
-      const response = await fetch(
-        `/api/geocode?q=${searchQuery}`
-      );
+      const response = await fetch(`/api/geocode?q=${searchQuery}`);
       if (response.ok) {
         const data = await response.json();
         setLocationSuggestions(data);
         if (data.length === 0) {
-          toast.error("No matching locations found. Please try a different address.");
-        } else if (data.length === 1) {
-          applySuggestedLocation(data[0]);
+          toast.error(
+            "No matching locations found. Please try a different address."
+          );
         }
       } else {
         toast.error("Failed to search location.");
@@ -429,7 +597,7 @@ export function PropertyForm({
     } finally {
       setIsSearchingLocation(false);
     }
-  }, [address, applySuggestedLocation]);
+  }, [address, city, stateName, country]);
 
   const requestNavigation = useCallback(
     (destination: string | "back"): Promise<boolean> => {
@@ -451,7 +619,7 @@ export function PropertyForm({
   useEffect(() => {
     onRegisterNavigationGuard?.({
       isDirty: () => isDirty,
-      confirmLeave,
+      confirmLeave
     });
   }, [confirmLeave, isDirty, onRegisterNavigationGuard]);
 
@@ -467,6 +635,7 @@ export function PropertyForm({
     slug: property?.slug ?? "",
     description: property?.description ?? "",
     city: property?.city ?? "",
+    lga: property?.lga ?? "",
     state: property?.state ?? "Lagos",
     country: property?.country ?? "Nigeria",
     status: String(property?.status ?? "AVAILABLE"),
@@ -493,7 +662,7 @@ export function PropertyForm({
   });
 
   // Check if form values have changed from initial
-  const checkIfDirty = (formData?: FormData) => {
+  /* const checkIfDirty = (formData?: FormData) => {
     const current = {
       address,
       landmark,
@@ -517,6 +686,7 @@ export function PropertyForm({
       const slug = formData.get("slug") as string;
       const description = formData.get("description") as string;
       const city = formData.get("city") as string;
+      const lga = formData.get("lga") as string;
       const state = formData.get("state") as string;
       const country = formData.get("country") as string;
       const status = formData.get("status") as string;
@@ -525,6 +695,7 @@ export function PropertyForm({
       if (slug !== initialDataRef.current.slug) return true;
       if (description !== initialDataRef.current.description) return true;
       if (city !== initialDataRef.current.city) return true;
+      if (lga !== initialDataRef.current.lga) return true;
       if (state !== initialDataRef.current.state) return true;
       if (country !== initialDataRef.current.country) return true;
       if (status !== initialDataRef.current.status) return true;
@@ -573,7 +744,7 @@ export function PropertyForm({
     }
 
     return false;
-  };
+  }; */
 
   // 1. Browser navigation (close tab, refresh, external links)
   useEffect(() => {
@@ -681,6 +852,7 @@ export function PropertyForm({
     if (longitude !== undefined) payload.longitude = longitude;
     payload.address = address;
     payload.landmark = landmark;
+    payload.lga = lga;
 
     // Define all conditional fields we want to track
     const allConditionalFields = [
@@ -696,7 +868,13 @@ export function PropertyForm({
       "serviceCharge",
       "cautionFee",
       "landSizeSqm",
-      "titleType"
+      "titleType",
+      "estimatedCompletion",
+      "zoningType",
+      "furnished",
+      "petsAllowed",
+      "negotiationStatus",
+      "yearBuilt"
     ];
 
     // Find the fields that belong to the active listing type
@@ -707,10 +885,18 @@ export function PropertyForm({
     // Clean and validate form inputs based on conditional fields
     for (const field of allConditionalFields) {
       if (!activeFields.includes(field)) {
-        payload[field] = null;
+        if (field === "negotiationStatus") {
+          delete payload[field];
+        } else {
+          payload[field] = null;
+        }
       } else {
         if (payload[field] === "" || payload[field] === undefined) {
-          payload[field] = null;
+          if (field === "negotiationStatus") {
+            delete payload[field];
+          } else {
+            payload[field] = null;
+          }
         } else {
           // Coerce number fields to numeric values on client side
           const fieldDef = CONDITIONAL_PROPERTY_FIELDS[listingType].find(
@@ -718,6 +904,10 @@ export function PropertyForm({
           );
           if (fieldDef?.type === "number") {
             payload[field] = Number(payload[field]);
+          } else if (field === "furnished" || field === "petsAllowed") {
+            if (payload[field] === "true") payload[field] = true;
+            else if (payload[field] === "false") payload[field] = false;
+            else payload[field] = null;
           }
         }
       }
@@ -750,6 +940,7 @@ export function PropertyForm({
         slug: payload.slug as string,
         description: payload.description as string,
         city: payload.city as string,
+        lga: payload.lga as string,
         state: payload.state as string,
         country: payload.country as string,
         status: payload.status as string,
@@ -815,7 +1006,25 @@ export function PropertyForm({
       return;
     }
 
-    const errorMsg = typeof data?.error === "string" ? data.error : "Failed to save property.";
+    let errorMsg = "Failed to save property.";
+    if (data?.error) {
+      if (typeof data.error === "string") {
+        errorMsg = data.error;
+      } else if (typeof data.error === "object") {
+        const zodError = data.error as {
+          fieldErrors?: Record<string, string[]>;
+          formErrors?: string[];
+        };
+        if (zodError.fieldErrors) {
+          const messages = Object.entries(zodError.fieldErrors)
+            .map(([field, errors]) => `${field}: ${errors.join(", ")}`)
+            .join(" | ");
+          errorMsg = messages || "Validation failed.";
+        } else if (zodError.formErrors && zodError.formErrors.length > 0) {
+          errorMsg = zodError.formErrors.join(", ");
+        }
+      }
+    }
     setFormStatus(errorMsg);
     toast.error(errorMsg);
   }
@@ -899,7 +1108,9 @@ export function PropertyForm({
     if (!currentProperty || !staged.length || isUploading) return;
 
     setIsUploading(true);
-    const toastId = toast.loading(`Uploading ${staged.length} file${staged.length === 1 ? "" : "s"}...`);
+    const toastId = toast.loading(
+      `Uploading ${staged.length} file${staged.length === 1 ? "" : "s"}...`
+    );
     setMediaStatus(
       `Uploading ${staged.length} file${staged.length === 1 ? "" : "s"}...`
     );
@@ -950,7 +1161,9 @@ export function PropertyForm({
     setMediaStatus("Deleting media...");
 
     try {
-      const response = await fetch(`/api/media/${item.id}`, { method: "DELETE" });
+      const response = await fetch(`/api/media/${item.id}`, {
+        method: "DELETE"
+      });
 
       if (response.ok) {
         setMedia((current) => current.filter((entry) => entry.id !== item.id));
@@ -981,12 +1194,12 @@ export function PropertyForm({
       description: `Remove this ${getMediaLabel(item.mediaType).toLowerCase()}?`,
       action: {
         label: "Remove",
-        onClick: () => void performDeleteMedia(item),
+        onClick: () => void performDeleteMedia(item)
       },
       cancel: {
         label: "Cancel",
-        onClick: () => {},
-      },
+        onClick: () => {}
+      }
     });
   }
 
@@ -1004,12 +1217,18 @@ export function PropertyForm({
             <label
               htmlFor="title"
               className="block text-sm font-semibold text-text-primary">
-              Property Title
+              Property Title <span className="text-rose-500 font-bold ml-0.5" title="Required">*</span>
             </label>
             <input
               id="title"
               name="title"
-              defaultValue={property?.title}
+              value={title}
+              onChange={(e) => {
+                const newTitle = e.target.value;
+                setTitle(newTitle);
+                setSlug(slugify(newTitle));
+                setIsDirty(true);
+              }}
               placeholder="e.g. Luxury 4-Bedroom Duplex"
               required
               className="w-full rounded-md border border-border bg-bg-primary px-3 py-2.5 text-sm text-text-primary focus:border-accent focus:outline-none"
@@ -1021,15 +1240,16 @@ export function PropertyForm({
             <label
               htmlFor="slug"
               className="block text-sm font-semibold text-text-primary">
-              Slug / URL Identifier
+              Slug / URL Identifier <span className="text-rose-500 font-bold ml-0.5" title="Required">*</span>
             </label>
             <input
               id="slug"
               name="slug"
-              defaultValue={property?.slug}
-              placeholder="e.g. luxury-4-bedroom-duplex"
+              value={slug}
+              readOnly
+              placeholder="Auto-generated from title"
               required
-              className="w-full rounded-md border border-border bg-bg-primary px-3 py-2.5 text-sm text-text-primary focus:border-accent focus:outline-none"
+              className="w-full rounded-md border border-border bg-bg-secondary px-3 py-2.5 text-sm text-text-muted cursor-not-allowed opacity-75 focus:outline-none"
             />
           </div>
         </div>
@@ -1039,7 +1259,7 @@ export function PropertyForm({
           <label
             htmlFor="description"
             className="block text-sm font-semibold text-text-primary">
-            Description
+            Description <span className="text-rose-500 font-bold ml-0.5" title="Required">*</span>
           </label>
           <textarea
             id="description"
@@ -1055,7 +1275,7 @@ export function PropertyForm({
           {/* Listing Type */}
           <div className="space-y-1">
             <label className="block text-sm font-semibold text-text-primary">
-              Listing Type
+              Listing Type <span className="text-rose-500 font-bold ml-0.5" title="Required">*</span>
             </label>
             <AppSelect
               name="listingType"
@@ -1074,7 +1294,7 @@ export function PropertyForm({
           {/* Status */}
           <div className="space-y-1">
             <label className="block text-sm font-semibold text-text-primary">
-              Property Status
+              Property Status <span className="text-rose-500 font-bold ml-0.5" title="Required">*</span>
             </label>
             <AppSelect
               name="status"
@@ -1104,7 +1324,7 @@ export function PropertyForm({
                   return (
                     <div key={field.name} className="space-y-1">
                       <label className="block text-sm font-semibold text-text-primary">
-                        {field.label}
+                        {field.label} <span className="text-[11px] font-normal text-text-muted/70 ml-1.5">(optional)</span>
                       </label>
                       <AppSelect
                         name={field.name}
@@ -1127,7 +1347,7 @@ export function PropertyForm({
                       <label
                         htmlFor={field.name}
                         className="block text-sm font-semibold text-text-primary">
-                        {field.label}
+                        {field.label} <span className="text-[11px] font-normal text-text-muted/70 ml-1.5">(optional)</span>
                       </label>
                       <input
                         id={field.name}
@@ -1155,7 +1375,7 @@ export function PropertyForm({
                     <label
                       htmlFor={field.name}
                       className="block text-sm font-semibold text-text-primary">
-                      {field.label}
+                      {field.label} <span className="text-[11px] font-normal text-text-muted/70 ml-1.5">(optional)</span>
                     </label>
                     <input
                       id={field.name}
@@ -1176,18 +1396,42 @@ export function PropertyForm({
             </div>
           )}
 
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+          {/* LGA */}
+          <div className="space-y-1">
+            <label
+              htmlFor="lga"
+              className="block text-sm font-semibold text-text-primary">
+              LGA (Local Govt Area) <span className="text-[11px] font-normal text-text-muted/70 ml-1.5">(optional)</span>
+            </label>
+            <input
+              id="lga"
+              name="lga"
+              value={lga}
+              onChange={(e) => {
+                setLga(e.target.value);
+                setIsDirty(true);
+              }}
+              placeholder="e.g. Ajeromi/Ifelodun"
+              className="w-full rounded-md border border-border bg-bg-primary px-3 py-2.5 text-sm text-text-primary focus:border-accent focus:outline-none"
+            />
+          </div>
+
           {/* City */}
           <div className="space-y-1">
             <label
               htmlFor="city"
               className="block text-sm font-semibold text-text-primary">
-              City
+              City <span className="text-rose-500 font-bold ml-0.5" title="Required">*</span>
             </label>
             <input
               id="city"
               name="city"
-              defaultValue={property?.city}
+              value={city}
+              onChange={(e) => {
+                setCity(e.target.value);
+                setIsDirty(true);
+              }}
               placeholder="e.g. Lekki"
               required
               className="w-full rounded-md border border-border bg-bg-primary px-3 py-2.5 text-sm text-text-primary focus:border-accent focus:outline-none"
@@ -1199,12 +1443,16 @@ export function PropertyForm({
             <label
               htmlFor="state"
               className="block text-sm font-semibold text-text-primary">
-              State
+              State <span className="text-rose-500 font-bold ml-0.5" title="Required">*</span>
             </label>
             <input
               id="state"
               name="state"
-              defaultValue={property?.state ?? "Lagos"}
+              value={stateName}
+              onChange={(e) => {
+                setStateName(e.target.value);
+                setIsDirty(true);
+              }}
               placeholder="e.g. Lagos"
               required
               className="w-full rounded-md border border-border bg-bg-primary px-3 py-2.5 text-sm text-text-primary focus:border-accent focus:outline-none"
@@ -1216,12 +1464,16 @@ export function PropertyForm({
             <label
               htmlFor="country"
               className="block text-sm font-semibold text-text-primary">
-              Country
+              Country <span className="text-rose-500 font-bold ml-0.5" title="Required">*</span>
             </label>
             <input
               id="country"
               name="country"
-              defaultValue={property?.country ?? "Nigeria"}
+              value={country}
+              onChange={(e) => {
+                setCountry(e.target.value);
+                setIsDirty(true);
+              }}
               placeholder="e.g. Nigeria"
               required
               className="w-full rounded-md border border-border bg-bg-primary px-3 py-2.5 text-sm text-text-primary focus:border-accent focus:outline-none"
@@ -1240,7 +1492,7 @@ export function PropertyForm({
               <label
                 htmlFor="address"
                 className="block text-sm font-semibold text-text-primary mb-1">
-                Street Address
+                Street Address <span className="text-[11px] font-normal text-text-muted/70 ml-1.5">(optional)</span>
               </label>
               <div className="flex gap-2">
                 <input
@@ -1249,6 +1501,12 @@ export function PropertyForm({
                   onChange={(e) => {
                     setAddress(e.target.value);
                     setIsDirty(true);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      handleGeocodeSearch();
+                    }
                   }}
                   placeholder="e.g., 123 Main Street, Victoria Island"
                   className="flex-1 rounded-md border border-border bg-bg-secondary px-3 py-2.5 text-sm text-text-primary focus:border-accent focus:outline-none"
@@ -1263,20 +1521,37 @@ export function PropertyForm({
               </div>
 
               {/* Suggestions dropdown */}
-              {locationSuggestions.length > 1 && (
-                <div className="absolute z-[999] mt-1 w-full max-h-48 overflow-y-auto rounded-md border border-border bg-bg-secondary shadow-lg p-1 space-y-1">
-                  <p className="text-[10px] font-bold text-text-muted px-2 py-1 uppercase tracking-wider">
-                    Select matching location:
+              {locationSuggestions.length > 0 && (
+                <div
+                  ref={suggestionsRef}
+                  className="absolute z-999 mt-1 w-full max-h-60 overflow-y-auto rounded-lg border border-border bg-bg-secondary shadow-xl p-2 space-y-1 backdrop-blur-md animate-in fade-in slide-in-from-top-2 duration-200">
+                  <p className="text-[10px] font-bold text-text-muted px-2.5 py-1.5 uppercase tracking-wider border-b border-border/50 mb-1">
+                    Matching Locations
                   </p>
                   {locationSuggestions.map((suggestion, idx) => (
                     <button
                       key={idx}
                       type="button"
                       onClick={() => applySuggestedLocation(suggestion)}
-                      className="w-full text-left px-2 py-1.5 text-xs hover:bg-bg-tertiary rounded text-text-primary truncate transition cursor-pointer"
-                      title={suggestion.display_name}
-                    >
-                      {suggestion.display_name}
+                      className="w-full flex items-start gap-2.5 text-left px-2.5 py-2 text-xs hover:bg-bg-tertiary rounded-md text-text-primary transition cursor-pointer group"
+                      title={suggestion.display_name}>
+                      <MapPin
+                        size={16}
+                        className="text-text-muted group-hover:text-accent mt-0.5 shrink-0 transition"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-xs text-text-primary truncate">
+                          {suggestion.display_name?.split(",")[0] ||
+                            "Unknown Road"}
+                        </p>
+                        <p className="text-[10px] text-text-muted truncate mt-0.5">
+                          {suggestion.display_name
+                            ?.split(",")
+                            .slice(1)
+                            .join(",")
+                            .trim()}
+                        </p>
+                      </div>
                     </button>
                   ))}
                 </div>
@@ -1287,7 +1562,7 @@ export function PropertyForm({
               <label
                 htmlFor="landmark"
                 className="block text-sm font-semibold text-text-primary mb-1">
-                Landmark / Area
+                Landmark / Area <span className="text-[11px] font-normal text-text-muted/70 ml-1.5">(optional)</span>
               </label>
               <input
                 id="landmark"
@@ -1304,7 +1579,7 @@ export function PropertyForm({
 
           <div>
             <label className="block text-sm font-semibold text-text-primary mb-2">
-              Select Location on Map
+              Select Location on Map <span className="text-[11px] font-normal text-text-muted/70 ml-1.5">(optional)</span>
             </label>
             <div className="rounded-lg border border-border overflow-hidden bg-bg-secondary">
               <MapPicker

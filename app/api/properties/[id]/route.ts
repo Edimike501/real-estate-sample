@@ -19,6 +19,7 @@ const updatePropertySchema = z.object({
   country: z.string().min(2).optional(),
   address: z.string().optional().nullable(),
   landmark: z.string().optional().nullable(),
+  lga: z.string().optional().nullable(),
   latitude: z.number().optional().nullable(),
   longitude: z.number().optional().nullable(),
   isFeatured: z.boolean().optional(),
@@ -91,8 +92,26 @@ const updatePropertySchema = z.object({
     z.date().nullable().optional()
   ),
   zoningType: z.string().optional().nullable(),
-  furnished: z.boolean().optional().nullable(),
-  petsAllowed: z.boolean().optional().nullable(),
+  furnished: z.preprocess(
+    (val) => {
+      if (val === "true" || val === true) return true;
+      if (val === "false" || val === false) return false;
+      return null;
+    },
+    z.boolean().nullable().optional()
+  ),
+  petsAllowed: z.preprocess(
+    (val) => {
+      if (val === "true" || val === true) return true;
+      if (val === "false" || val === false) return false;
+      return null;
+    },
+    z.boolean().nullable().optional()
+  ),
+  negotiationStatus: z.preprocess(
+    (val) => (val === null || val === "" ? undefined : val),
+    z.enum(["FIXED", "NEGOTIABLE", "CONTACT_FOR_PRICE"]).optional()
+  ),
   yearBuilt: z.preprocess(
     (val) =>
       val === "" || val === null || val === undefined ? null : Number(val),
@@ -150,6 +169,35 @@ export async function GET(
   }
 }
 
+function slugify(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[^\w\s-]/g, "")
+    .replace(/[\s_]+/g, "-")
+    .replace(/--+/g, "-")
+    .replace(/^-+/, "")
+    .replace(/-+$/, "");
+}
+
+async function generateUniqueSlug(title: string, excludePropertyId?: string): Promise<string> {
+  const baseSlug = slugify(title) || "property";
+  let slug = baseSlug;
+  let counter = 1;
+
+  while (true) {
+    const existing = await prisma.property.findUnique({
+      where: { slug }
+    });
+
+    if (!existing || (excludePropertyId && existing.id === excludePropertyId)) {
+      return slug;
+    }
+
+    slug = `${baseSlug}-${counter}`;
+    counter++;
+  }
+}
+
 export async function PATCH(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
@@ -193,6 +241,10 @@ export async function PATCH(
     }
 
     const payload = updatePropertySchema.parse(body);
+
+    if (payload.title) {
+      payload.slug = await generateUniqueSlug(payload.title, id);
+    }
 
     const property = await prisma.property.update({
       where: { id },

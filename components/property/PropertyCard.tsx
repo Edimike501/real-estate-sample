@@ -47,7 +47,7 @@ export function PropertyCard({
   const statConfig = normalizedStatus ? statusConfig[normalizedStatus] : null;
 
   const propertyUrl = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/properties/${property.slug}`;
-  const locationStr = [property.city, property.state]
+  const locationStr = [property.city, property.lga, property.state]
     .filter(Boolean)
     .join(", ");
 
@@ -120,7 +120,7 @@ export function PropertyCard({
             {property.title}
           </h3>
           <p className="text-xs text-text-muted">
-            {property.city}, {property.state}
+            {locationStr}
           </p>
         </div>
 
@@ -179,6 +179,21 @@ export function PropertyCard({
             href={whatsappLink}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={() => {
+              fetch("/api/inquiries", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  guestName: session?.name || "Guest",
+                  guestPhone: session?.phone || "0000000000",
+                  guestEmail: session?.email || undefined,
+                  propertyId: property.id,
+                  source: InquirySource.FEATURED_CARD,
+                }),
+              }).catch((err) => {
+                console.error("Error submitting property card inquiry:", err);
+              });
+            }}
             className="inline-flex w-full items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-lg transition-all px-6 py-3 text-xs">
             <MessageCircle className="w-4 h-4" />
             Enquire Now

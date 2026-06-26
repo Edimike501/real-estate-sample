@@ -230,6 +230,7 @@ export function PropertyTable() {
                   </td>
                   <td className="px-4 py-3.5 text-text-secondary whitespace-nowrap">
                     {property.city}
+                    {property.lga && ` (${property.lga})`}
                   </td>
                   <td className="px-4 py-3.5 whitespace-nowrap">
                     <div className="flex justify-end gap-2">

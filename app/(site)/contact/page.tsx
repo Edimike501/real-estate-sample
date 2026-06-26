@@ -6,7 +6,6 @@ import { siteMetadata } from "@/metadata/site";
 import { Mail, MapPin, Phone } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { email } from "zod";
 
 export const metadata: Metadata = {
   title: "Contact Us",

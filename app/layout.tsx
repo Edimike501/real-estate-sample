@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 import { JsonLd } from "@/components/seo/JsonLd";
 import { QueryProvider } from "@/components/shared/query-provider";
 import { Toaster } from "@/components/ui/sonner";
@@ -33,6 +34,7 @@ export const metadata: Metadata = {
     "Opollo", // ← ADD brand name
     "Opollo Luxury", // ← ADD brand name
     "Opollo Luxury Properties", // ← ADD brand name
+    "Opollo Luxury Properties Ltd", // ← ADD brand name
     "buy house Lagos", // ← ADD high-intent keyword
     "Nigerian Diaspora real estate" // ← ADD Diaspora keyword
   ],

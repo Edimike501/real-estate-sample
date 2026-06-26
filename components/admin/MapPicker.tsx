@@ -10,7 +10,7 @@ import { useDebounce } from "@/hooks/use-debounce.hooks";
 type MapPickerProps = {
   initialLat?: number;
   initialLng?: number;
-  onLocationChange: (lat: number, lng: number, address: string, isInitial?: boolean) => void;
+  onLocationChange: (lat: number, lng: number, address: string, addressDetails?: any, isInitial?: boolean) => void;
 };
 
 type MarkerControllerProps = {
@@ -83,12 +83,13 @@ export function MapPicker({ initialLat, initialLng, onLocationChange }: MapPicke
             signal: controller.signal,
           }
         );
-        const data = (await response.json()) as { display_name?: string };
+        const data = (await response.json()) as { display_name?: string; address?: any };
         const displayName = data.display_name ?? "";
+        const addressObj = data.address || null;
         setAddress(displayName);
-        onLocationChangeRef.current(debouncedCoords[0], debouncedCoords[1], displayName, isInitial);
+        onLocationChangeRef.current(debouncedCoords[0], debouncedCoords[1], displayName, addressObj, isInitial);
       } catch {
-        onLocationChangeRef.current(debouncedCoords[0], debouncedCoords[1], "", isInitial);
+        onLocationChangeRef.current(debouncedCoords[0], debouncedCoords[1], "", null, isInitial);
       } finally {
         setIsLocating(false);
       }

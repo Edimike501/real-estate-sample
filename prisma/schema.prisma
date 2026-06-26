@@ -73,6 +73,7 @@ model Property {
   isPinned          Boolean           @default(false)
   address           String?
   landmark          String?
+  lga               String?
   city              String
   state             String            @default("Lagos")
   country           String            @default("Nigeria")

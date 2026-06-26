@@ -12,7 +12,8 @@ import {
   Menu,
   X,
   LogOut,
-  User as UserIcon
+  User as UserIcon,
+  Settings
 } from "lucide-react";
 
 import Logo from "@/components/ui/Logo";
@@ -31,6 +32,7 @@ const links = [
   { href: "/admin/dashboard/properties", label: "Properties", icon: Building2 },
   { href: "/admin/dashboard/inquiries", label: "Inquiries", icon: MessageSquare },
   { href: "/admin/dashboard/users", label: "Users", icon: Users },
+  { href: "/admin/dashboard/settings", label: "Settings", icon: Settings },
 ];
 
 function isActivePath(pathname: string, href: string) {
@@ -42,8 +44,16 @@ export function Sidebar({ user }: SidebarProps) {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
 
+  const currentRole = user?.role || "ADMIN";
+  const filteredLinks = links.filter((link) => {
+    if (link.href === "/admin/dashboard/users") {
+      return currentRole === "SUPER_ADMIN";
+    }
+    return true;
+  });
+
   // Get current active link label
-  const activeLink = links.find((link) => isActivePath(pathname, link.href)) || links[0];
+  const activeLink = filteredLinks.find((link) => isActivePath(pathname, link.href)) || filteredLinks[0];
 
   function handleSignOut() {
     signOut({ callbackUrl: "/admin/login" });
@@ -55,7 +65,6 @@ export function Sidebar({ user }: SidebarProps) {
     VIEWER: "bg-gray-100 text-gray-800 dark:bg-gray-800/40 dark:text-gray-300 border border-gray-200 dark:border-gray-700/50"
   };
 
-  const currentRole = user?.role || "ADMIN";
   const roleClass = roleStyles[currentRole] || roleStyles.ADMIN;
 
   return (
@@ -68,7 +77,7 @@ export function Sidebar({ user }: SidebarProps) {
           </div>
 
           <nav className="space-y-1">
-            {links.map((link) => {
+            {filteredLinks.map((link) => {
               const Icon = link.icon;
               const isActive = isActivePath(pathname, link.href);
               return (
@@ -164,7 +173,7 @@ export function Sidebar({ user }: SidebarProps) {
               </div>
 
               <nav className="space-y-1">
-                {links.map((link) => {
+                {filteredLinks.map((link) => {
                   const Icon = link.icon;
                   const isActive = isActivePath(pathname, link.href);
                   return (

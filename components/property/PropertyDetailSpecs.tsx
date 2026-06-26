@@ -16,6 +16,7 @@ const SHARED_SPECS = [
   { label: "Property Type", value: (p: Property) => formatListingType(p.listingType as ListingType) },
   { label: "Status", value: (p: Property) => formatPropertyStatus(p.status as PropertyStatus) },
   { label: "City", value: (p: Property) => p.city },
+  { label: "LGA", value: (p: Property) => p.lga },
   { label: "State", value: (p: Property) => p.state },
   { label: "Country", value: (p: Property) => p.country },
   { label: "Size", value: (p: Property) => formatSize(p.sizeSqm) },

@@ -1,20 +1,21 @@
 "use client";
 
-import { Edit, Eye, Trash2, Copy } from "lucide-react";
+import { Copy, Edit, Eye, Trash2 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { useDebounce } from "@/hooks/use-debounce.hooks";
-import { type Property } from "@/types";
 import { formatEnum } from "@/lib/utils";
+import { type Property } from "@/types";
 
 export function PropertyTable() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const currentTab = searchParams.get("tab") === "archived" ? "archived" : "active";
+  const currentTab =
+    searchParams.get("tab") === "archived" ? "archived" : "active";
 
   const [searchInput, setSearchInput] = useState("");
   const [properties, setProperties] = useState<Property[]>([]);
@@ -25,11 +26,13 @@ export function PropertyTable() {
   async function performDeleteProperty(property: Property) {
     try {
       const response = await fetch(`/api/properties/${property.id}`, {
-        method: "DELETE",
+        method: "DELETE"
       });
 
       if (response.ok) {
-        setProperties((current) => current.filter((item) => item.id !== property.id));
+        setProperties((current) =>
+          current.filter((item) => item.id !== property.id)
+        );
         toast.success("Property archived successfully.");
       } else {
         toast.error("Failed to archive property.");
@@ -44,12 +47,12 @@ export function PropertyTable() {
       description: `Archive "${property.title}"?`,
       action: {
         label: "Archive",
-        onClick: () => void performDeleteProperty(property),
+        onClick: () => void performDeleteProperty(property)
       },
       cancel: {
         label: "Cancel",
-        onClick: () => {},
-      },
+        onClick: () => {}
+      }
     });
   }
 
@@ -62,7 +65,9 @@ export function PropertyTable() {
       });
 
       if (response.ok) {
-        setProperties((current) => current.filter((item) => item.id !== property.id));
+        setProperties((current) =>
+          current.filter((item) => item.id !== property.id)
+        );
         toast.success("Property restored successfully.");
       } else {
         toast.error("Failed to restore property.");
@@ -78,12 +83,12 @@ export function PropertyTable() {
       description: `Restore "${property.title}"?`,
       action: {
         label: "Restore",
-        onClick: () => void performRestoreProperty(property),
+        onClick: () => void performRestoreProperty(property)
       },
       cancel: {
         label: "Cancel",
-        onClick: () => {},
-      },
+        onClick: () => {}
+      }
     });
   }
 
@@ -95,7 +100,9 @@ export function PropertyTable() {
       });
       const data = await response.json();
       if (response.ok && data.success && data.property) {
-        toast.success("Property duplicated. Review and update details before publishing.");
+        toast.success(
+          "Property duplicated. Review and update details before publishing."
+        );
         router.push(`/admin/dashboard/properties/${data.property.id}/edit`);
       } else {
         toast.error(data.error || "Failed to duplicate property.");
@@ -132,22 +139,20 @@ export function PropertyTable() {
       <div className="flex border-b border-border">
         <button
           onClick={() => handleTabChange("active")}
-          className={`px-4 py-2 text-sm font-semibold border-b-2 cursor-pointer transition-colors -mb-[2px] ${
+          className={`px-4 py-2 text-sm font-semibold border-b-2 cursor-pointer transition-colors mb-[-2px] ${
             currentTab === "active"
               ? "border-accent text-accent"
               : "border-transparent text-text-muted hover:text-text-primary"
-          }`}
-        >
+          }`}>
           Active Listings
         </button>
         <button
           onClick={() => handleTabChange("archived")}
-          className={`px-4 py-2 text-sm font-semibold border-b-2 cursor-pointer transition-colors -mb-[2px] ${
+          className={`px-4 py-2 text-sm font-semibold border-b-2 cursor-pointer transition-colors mb-[-2px] ${
             currentTab === "archived"
               ? "border-accent text-accent"
               : "border-transparent text-text-muted hover:text-text-primary"
-          }`}
-        >
+          }`}>
           Archived Listings
         </button>
       </div>
@@ -165,13 +170,27 @@ export function PropertyTable() {
         <table className="min-w-[800px] w-full text-sm border-collapse">
           <thead>
             <tr className="text-left text-text-muted bg-bg-secondary/40 border-b border-border/60">
-              <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider text-text-muted whitespace-nowrap">Preview</th>
-              <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider text-text-muted whitespace-nowrap">Title</th>
-              <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider text-text-muted whitespace-nowrap">Type</th>
-              <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider text-text-muted whitespace-nowrap">Status</th>
-              <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider text-text-muted whitespace-nowrap">Inquiries</th>
-              <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider text-text-muted whitespace-nowrap">City</th>
-              <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider text-text-muted text-right whitespace-nowrap">Actions</th>
+              <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider text-text-muted whitespace-nowrap">
+                Preview
+              </th>
+              <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider text-text-muted whitespace-nowrap">
+                Title
+              </th>
+              <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider text-text-muted whitespace-nowrap">
+                Type
+              </th>
+              <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider text-text-muted whitespace-nowrap">
+                Status
+              </th>
+              <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider text-text-muted whitespace-nowrap">
+                Inquiries
+              </th>
+              <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider text-text-muted whitespace-nowrap">
+                City
+              </th>
+              <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider text-text-muted text-right whitespace-nowrap">
+                Actions
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border/80">
@@ -181,12 +200,16 @@ export function PropertyTable() {
                   key={property.id}
                   className={`hover:bg-bg-secondary/15 transition-colors ${
                     currentTab === "archived" ? "opacity-60" : ""
-                  }`}
-                >
+                  }`}>
                   <td className="px-4 py-3.5 whitespace-nowrap">
                     {(() => {
-                      const firstImage = property.media?.find((m) => m.mediaType === "IMAGE");
-                      const src = firstImage?.thumbnailUrl ?? firstImage?.url ?? "/images/property-placeholder.png";
+                      const firstImage = property.media?.find(
+                        (m) => m.mediaType === "IMAGE"
+                      );
+                      const src =
+                        firstImage?.thumbnailUrl ??
+                        firstImage?.url ??
+                        "/images/property-placeholder.png";
                       return (
                         <Image
                           src={src}
@@ -198,37 +221,46 @@ export function PropertyTable() {
                       );
                     })()}
                   </td>
-                  <td className="px-4 py-3.5 text-text-primary font-semibold max-w-xs truncate" title={property.title}>
+                  <td
+                    className="px-4 py-3.5 text-text-primary font-semibold max-w-xs truncate"
+                    title={property.title}>
                     {property.title}
                   </td>
                   <td className="px-4 py-3.5 text-text-secondary font-medium whitespace-nowrap">
                     {formatEnum(property.listingType)}
                   </td>
                   <td className="px-4 py-3.5 whitespace-nowrap">
-                    <span className={`inline-block px-2.5 py-1 rounded-full text-xs font-bold ${
-                      property.status === "AVAILABLE" ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-900/50" :
-                      property.status === "SOLD" ? "bg-neutral-100 text-neutral-800 dark:bg-neutral-800/40 dark:text-neutral-300 border border-neutral-200 dark:border-neutral-700/50" :
-                      property.status === "LET" ? "bg-purple-100 text-purple-800 dark:bg-purple-950/40 dark:text-purple-300 border border-purple-200 dark:border-purple-900/50" :
-                      property.status === "UNDER_OFFER" ? "bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-200 dark:border-amber-900/50" :
-                      "bg-blue-100 text-blue-800 dark:bg-blue-950/40 dark:text-blue-300 border border-blue-200 dark:border-blue-900/50"
-                    }`}>
+                    <span
+                      className={`inline-block px-2.5 py-1 rounded-full text-xs font-bold ${
+                        property.status === "AVAILABLE"
+                          ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-900/50"
+                          : property.status === "SOLD"
+                            ? "bg-neutral-100 text-neutral-800 dark:bg-neutral-800/40 dark:text-neutral-300 border border-neutral-200 dark:border-neutral-700/50"
+                            : property.status === "LET"
+                              ? "bg-purple-100 text-purple-800 dark:bg-purple-950/40 dark:text-purple-300 border border-purple-200 dark:border-purple-900/50"
+                              : property.status === "UNDER_OFFER"
+                                ? "bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-200 dark:border-amber-900/50"
+                                : "bg-blue-100 text-blue-800 dark:bg-blue-950/40 dark:text-blue-300 border border-blue-200 dark:border-blue-900/50"
+                      }`}>
                       {formatEnum(property.status)}
                     </span>
                   </td>
                   <td className="px-4 py-3.5 whitespace-nowrap">
                     {(() => {
                       const count = property._count?.inquiries ?? 0;
-                      let badgeStyle = "bg-neutral-100 text-neutral-600 dark:bg-neutral-800/45 dark:text-neutral-300 border border-neutral-200 dark:border-neutral-700/50";
+                      let badgeStyle =
+                        "bg-neutral-100 text-neutral-600 dark:bg-neutral-800/45 dark:text-neutral-300 border border-neutral-200 dark:border-neutral-700/50";
                       if (count > 0 && count <= 5) {
-                        badgeStyle = "bg-blue-50 text-blue-700 dark:bg-blue-950/45 dark:text-blue-300 border border-blue-200 dark:border-blue-900/50";
+                        badgeStyle =
+                          "bg-blue-50 text-blue-700 dark:bg-blue-950/45 dark:text-blue-300 border border-blue-200 dark:border-blue-900/50";
                       } else if (count > 5) {
-                        badgeStyle = "bg-accent text-white border border-accent";
+                        badgeStyle =
+                          "bg-accent text-white border border-accent";
                       }
                       return (
                         <Link
                           href={`/admin/dashboard/inquiries?propertyId=${property.id}`}
-                          className={`inline-flex items-center justify-center px-2.5 py-1 rounded-full text-xs font-bold transition hover:opacity-85 ${badgeStyle}`}
-                        >
+                          className={`inline-flex items-center justify-center px-2.5 py-1 rounded-full text-xs font-bold transition hover:opacity-85 ${badgeStyle}`}>
                           {count}
                         </Link>
                       );
@@ -245,8 +277,7 @@ export function PropertyTable() {
                           type="button"
                           title="Restore property"
                           onClick={() => void restoreProperty(property)}
-                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md border border-accent text-accent text-xs font-semibold hover:bg-accent/5 transition cursor-pointer"
-                        >
+                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md border border-accent text-accent text-xs font-semibold hover:bg-accent/5 transition cursor-pointer">
                           Restore
                         </button>
                       ) : (
@@ -254,15 +285,13 @@ export function PropertyTable() {
                           <Link
                             href={`/admin/dashboard/properties/${property.id}`}
                             title="View property"
-                            className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-border text-text-secondary transition hover:border-accent hover:text-text-primary bg-bg-primary"
-                          >
+                            className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-border text-text-secondary transition hover:border-accent hover:text-text-primary bg-bg-primary">
                             <Eye size={15} />
                           </Link>
                           <Link
                             href={`/admin/dashboard/properties/${property.id}/edit`}
                             title="Edit property"
-                            className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-border text-text-secondary transition hover:border-accent hover:text-text-primary bg-bg-primary"
-                          >
+                            className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-border text-text-secondary transition hover:border-accent hover:text-text-primary bg-bg-primary">
                             <Edit size={15} />
                           </Link>
                           <button
@@ -270,16 +299,14 @@ export function PropertyTable() {
                             title="Duplicate property"
                             disabled={duplicatingId === property.id}
                             onClick={() => void duplicateProperty(property.id)}
-                            className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-border text-text-secondary transition hover:border-accent hover:text-text-primary bg-bg-primary cursor-pointer disabled:opacity-50"
-                          >
+                            className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-border text-text-secondary transition hover:border-accent hover:text-text-primary bg-bg-primary cursor-pointer disabled:opacity-50">
                             <Copy size={15} />
                           </button>
                           <button
                             type="button"
                             title="Archive property"
                             onClick={() => void deleteProperty(property)}
-                            className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-border text-text-secondary transition hover:border-red-400 hover:text-red-500 bg-bg-primary cursor-pointer"
-                          >
+                            className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-border text-text-secondary transition hover:border-red-400 hover:text-red-500 bg-bg-primary cursor-pointer">
                             <Trash2 size={15} />
                           </button>
                         </>
@@ -290,7 +317,9 @@ export function PropertyTable() {
               ))
             ) : (
               <tr>
-                <td colSpan={7} className="px-4 py-8 text-center text-text-muted">
+                <td
+                  colSpan={7}
+                  className="px-4 py-8 text-center text-text-muted">
                   No properties found matching search criteria.
                 </td>
               </tr>

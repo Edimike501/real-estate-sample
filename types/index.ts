@@ -27,6 +27,8 @@ export interface SiteConfig {
     address: string;
     instagram: string;
     facebook: string;
+    facebookPage: string;
+    tiktok: string;
     linkedin: string;
   };
   hero: {

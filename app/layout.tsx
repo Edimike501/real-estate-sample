@@ -6,6 +6,7 @@ import { siteMetadata } from "@/metadata/site";
 import "leaflet/dist/leaflet.css";
 import type { Metadata } from "next";
 import { ThemeProvider } from "next-themes";
+import { headers } from "next/headers";
 import Image from "next/image";
 import Script from "next/script";
 import "./globals.css";
@@ -38,7 +39,11 @@ export const metadata: Metadata = {
   ],
   authors: [{ name: siteMetadata.company.owner || siteMetadata.company.name }],
   icons: {
-    icon: "/icon.png",
+    // icon: "/icon.png",
+    icon: [
+      { url: "/favicon.ico", sizes: "any" }, // Standard fallback
+      { url: "/icon-static-32x32.png", type: "image/png", sizes: "32x32" } // Explicit size for Bravebot
+    ],
     shortcut: "/icon.png",
     apple: "/apple-icon.png"
     /* icon: "/og-image.png",
@@ -87,6 +92,10 @@ export default async function RootLayout({
 }) {
   // Extract the unique nonce created by your middleware
   // const nonce = (await headers()).get("x-nonce") || undefined;
+  // Grab the generated cryptographic token from the middleware request headers
+  const headerList = await headers();
+  const nonce = headerList.get("x-nonce") || undefined;
+
   const baseUrl =
     process.env.NEXT_PUBLIC_APP_URL ?? "https://www.opolloluxuries.com";
 
@@ -163,18 +172,17 @@ export default async function RootLayout({
         )}
 
         {/* Yandex.Metrica Counter */}
-        {process.env.NEXT_PUBLIC_YANDEX_METRICA_ID && (
-          <>
-            <Script
-              type="text/javascript"
-              id="yandex-metrica"
-              strategy="afterInteractive">
-              {`
-                (function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
-                m[i].l=1*new Date();
-                for (var j = 0; j < e.length; j++) {if (e[j].r) { return; }}
-                k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)})
-                (window, document, "script", "https://mc.yandex.ru/metrika/tag.js?id=${process.env.NEXT_PUBLIC_YANDEX_METRICA_ID}", "ym");
+        <Script
+          type="text/javascript"
+          id="yandex-metrica"
+          strategy="afterInteractive"
+          nonce={nonce}>
+          {`
+            (function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
+            m[i].l=1*new Date();
+            for (var j = 0; j < e.length; j++) {if (e[j].r) { return; }}
+            k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)})
+            (window, document, "script", "https://mc.yandex.ru/metrika/tag.js?id=${process.env.NEXT_PUBLIC_YANDEX_METRICA_ID}", "ym");
 
                 ym(${process.env.NEXT_PUBLIC_YANDEX_METRICA_ID}, "init", {
                 ssr:true, webvisor:true, clickmap:true, ecommerce:"dataLayer", referrer: document.referrer, url: location.href, accurateTrackBounce:true, trackLinks:true

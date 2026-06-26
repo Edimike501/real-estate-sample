@@ -22,8 +22,12 @@ export const siteMetadata: SiteConfig = {
     address:
       "A2 59/60, Agric Building Materials Complex, Abule Ado Junction, Lagos, Nigeria",
     instagram: "https://instagram.com/opolloluxury",
-    facebook: "https://facebook.com/opolloluxury",
-    linkedin: "https://linkedin.com/company/opollo-luxury-properties"
+    facebook: "https://www.facebook.com/share/1BV2PkBwbv/",
+    facebookPage: "https://www.facebook.com/share/1BV2PkBwbv/",
+    // facebookPage: "https://www.facebook.com/share/19DkY5xzNW/",
+    tiktok: "https://www.tiktok.com/@opollo.luxury.pro?_r=1&_t=ZS-97ErOeaB0B3",
+    linkedin:
+      "https://www.linkedin.com/in/opollo-luxury-properties-ltd-608b7a416"
   },
 
   // Hero section

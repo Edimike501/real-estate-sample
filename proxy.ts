@@ -14,15 +14,15 @@ const authMiddleware = withAuth(
     }
 
     // 2. Generate a unique cryptographic nonce for this request
-    // const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
+    const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
 
     // 3. Define the Content Security Policy
     const cspHeader = `
       default-src 'self';
 
-      script-src 'self' 'unsafe-inline' ${
+      script-src 'self' 'nonce-${nonce}' 'strict-dynamic' ${
         process.env.NODE_ENV === "development" ? "'unsafe-eval'" : ""
-      } https://www.googletagmanager.com https://www.google-analytics.com https://va.vercel-scripts.com;
+      } https://www.googletagmanager.com https://www.google-analytics.com https://va.vercel-scripts.com https://mc.yandex.ru https://yastatic.net;
 
       style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com;
 
@@ -30,14 +30,18 @@ const authMiddleware = withAuth(
 
       font-src 'self' https://fonts.gstatic.com;
 
-      connect-src 'self' https://www.google-analytics.com https://analytics.google.com https://vitals.vercel-insights.com https://api.resend.com;
+      connect-src 'self' https://www.google-analytics.com https://analytics.google.com https://vitals.vercel-insights.com https://api.resend.com https://mc.yandex.ru;
 
       frame-src 'self' https://search.google.com;
+
+      child-src 'self' blob:;
+
 
       object-src 'none';
       base-uri 'self';
       form-action 'self';
-      frame-ancestors 'none';
+
+      frame-ancestors 'self' https://metrika.yandex.ru https://*.webvisor.com;
       ${process.env.NODE_ENV === "production" ? "upgrade-insecure-requests;" : ""}
     `
       .replace(/\s{2,}/g, " ")
@@ -45,7 +49,7 @@ const authMiddleware = withAuth(
 
     // 4. Inject nonce + CSP into request headers so Next.js components can read them
     const requestHeaders = new Headers(req.headers);
-    // requestHeaders.set("x-nonce", nonce);
+    requestHeaders.set("x-nonce", nonce);
     requestHeaders.set("Content-Security-Policy", cspHeader);
 
     // 5. Forward the modified headers into the routing system

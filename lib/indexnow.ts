@@ -29,15 +29,18 @@ export async function submitToIndexNow(
       })
     });
 
-    if (response.status === 200) {
+    if (response.status === 200 || response.status === 202) {
       return {
         success: true,
-        message: "URLs pushed to IndexNow queue successfully."
+        message:
+          response.status === 202
+            ? "URLs accepted. Awaiting initial API key verification by search engines."
+            : "URLs pushed and indexed successfully."
       };
     } else {
       return {
         success: false,
-        error: `IndexNow API responded with code ${response.status}`
+        error: `IndexNow API responded with unhandled code ${response.status}`
       };
     }
   } catch (error) {

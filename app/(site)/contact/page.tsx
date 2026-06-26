@@ -1,11 +1,12 @@
 import { JsonLd } from "@/components/seo/JsonLd";
-import ContactForm from "@/components/ui/ContactForm";
 import { BackButton } from "@/components/ui/BackButton";
+import ContactForm from "@/components/ui/ContactForm";
 import WhatsAppButton from "@/components/ui/WhatsAppButton";
 import { siteMetadata } from "@/metadata/site";
 import { Mail, MapPin, Phone } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { email } from "zod";
 
 export const metadata: Metadata = {
   title: "Contact Us",
@@ -52,7 +53,7 @@ export const metadata: Metadata = {
 
   // Structured data hint for Google — your business address and contact
   alternates: {
-    canonical: `${process.env.NEXT_PUBLIC_APP_URL}/contact`
+    canonical: `/contact`
   }
 };
 
@@ -63,7 +64,7 @@ export default function ContactPage() {
   const contactPageSchema = {
     "@context": "https://schema.org",
     "@type": "ContactPage",
-    url: `${baseUrl}/contact`,
+    url: `${baseUrl.replace(/\/$/, "")}/contact`,
     name: "Contact Opollo Luxury Properties",
     mainEntity: {
       "@type": "LocalBusiness",
@@ -86,7 +87,12 @@ export default function ContactPage() {
       <JsonLd schema={contactPageSchema} />
       <main className="section-padding bg-bg-primary min-h-screen">
         <div className="max-w-6xl mx-auto">
-          <BackButton href="/" label="Back" variant="minimal" className="mb-6" />
+          <BackButton
+            href="/"
+            label="Back"
+            variant="minimal"
+            className="mb-6"
+          />
           <div className="max-w-3xl mb-12">
             <h1 className="text-4xl md:text-5xl font-display font-bold text-text-primary mb-4">
               Contact Us

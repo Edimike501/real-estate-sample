@@ -1,20 +1,20 @@
 "use client";
 
+import { useGuestSession } from "@/hooks/useGuestSession";
+import { buildWhatsAppLink } from "@/lib/whatsapp";
 import { Property } from "@/types";
-import { Bath, Bed, Ruler } from "lucide-react";
+import { InquirySource } from "@/types/enums";
+import { Bath, Bed, MessageCircle, Ruler } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import AnimatedSection from "./AnimatedSection";
-import WhatsAppButton from "./WhatsAppButton";
 
 interface PropertyCardProps {
   property: Property;
-  phoneNumber: string;
 }
 
-export default function PropertyCard({
-  property,
-  phoneNumber
-}: PropertyCardProps) {
+export default function PropertyCard({ property }: PropertyCardProps) {
+  const { session } = useGuestSession();
   const imageSrc = property.image ?? "/images/properties/prop-001.svg";
   const statusColors = {
     AVAILABLE: "bg-green-500",
@@ -38,7 +38,23 @@ export default function PropertyCard({
     Apartment: "bg-orange-100 text-orange-700"
   };
   const statusKey = String(property.status) as keyof typeof statusColors;
-  const typeKey = String(property.type ?? property.listingType) as keyof typeof typeColors;
+  const typeKey = String(
+    property.type ?? property.listingType
+  ) as keyof typeof typeColors;
+
+  const propertyUrl = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/properties/${property.slug}`;
+  const locationStr =
+    property.location ||
+    [property.city, property.lga, property.state].filter(Boolean).join(", ");
+
+  const whatsappLink = buildWhatsAppLink({
+    guestName: session?.name || "Guest",
+    guestPhone: session?.phone || "",
+    propertyTitle: property.title,
+    propertyLocation: locationStr,
+    propertyUrl,
+    source: InquirySource.FEATURED_CARD
+  });
 
   return (
     <AnimatedSection>
@@ -70,7 +86,7 @@ export default function PropertyCard({
             <h3 className="text-xl font-display font-bold text-text-primary mb-1">
               {property.title}
             </h3>
-            <p className="text-text-muted text-sm">{property.location}</p>
+            <p className="text-text-muted text-sm">{property.location || locationStr}</p>
           </div>
 
           <p className="text-2xl font-bold text-accent">{property.price}</p>
@@ -100,12 +116,36 @@ export default function PropertyCard({
           </div>
 
           {/* CTA */}
-          <WhatsAppButton
-            phoneNumber={phoneNumber}
-            message={property.whatsappMessage ?? `Hi, I'm interested in ${property.title}.`}
-            label="Enquire Now"
-            className="w-full"
-          />
+          <div className="flex flex-col gap-2">
+            <Link
+              href={`/properties/${property.slug}`}
+              className="inline-flex w-full items-center justify-center rounded-md bg-accent px-4 py-2.5 text-sm font-semibold text-white hover:bg-accent-light transition">
+              View Property
+            </Link>
+            <Link
+              href={whatsappLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => {
+                fetch("/api/inquiries", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    guestName: session?.name || "Guest",
+                    guestPhone: session?.phone || "0000000000",
+                    guestEmail: session?.email || undefined,
+                    propertyId: property.id,
+                    source: InquirySource.FEATURED_CARD,
+                  }),
+                }).catch((err) => {
+                  console.error("Error submitting property card inquiry:", err);
+                });
+              }}
+              className="inline-flex w-full items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-lg transition-all px-6 py-3 text-sm">
+              <MessageCircle className="w-5 h-5" />
+              Enquire Now
+            </Link>
+          </div>
         </div>
       </div>
     </AnimatedSection>

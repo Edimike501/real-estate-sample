@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useMemo, useState } from "react";
+import { toast } from "sonner";
 
 import { useGuestSession } from "@/hooks/useGuestSession";
 import { InquirySource } from "@/types/enums";
@@ -36,29 +37,39 @@ export function InquiryForm({ propertyId }: InquiryFormProps) {
 
     saveSession({ name: guestName, phone: guestPhone, email: guestEmail || undefined });
 
-    const response = await fetch("/api/inquiries", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        guestName,
-        guestPhone,
-        guestEmail: guestEmail || undefined,
-        propertyId,
-        source: propertyId ? InquirySource.PROPERTY_PAGE : InquirySource.CONTACT_FORM,
-        message: message || undefined,
-      }),
-    });
+    try {
+      const response = await fetch("/api/inquiries", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          guestName,
+          guestPhone,
+          guestEmail: guestEmail || undefined,
+          propertyId,
+          source: propertyId ? InquirySource.PROPERTY_PAGE : InquirySource.CONTACT_FORM,
+          message: message || undefined,
+        }),
+      });
 
-    const data = (await response.json()) as { success?: boolean; whatsappUrl?: string; error?: string };
+      const data = (await response.json()) as { success?: boolean; whatsappUrl?: string; error?: string };
 
-    if (!response.ok || !data.success || !data.whatsappUrl) {
-      setError(data.error ?? "Failed to submit inquiry.");
+      if (!response.ok || !data.success || !data.whatsappUrl) {
+        const errorMsg = data.error ?? "Failed to submit inquiry.";
+        setError(errorMsg);
+        toast.error(errorMsg);
+        setIsSubmitting(false);
+        return;
+      }
+
+      toast.success("Inquiry submitted! Redirecting to WhatsApp...");
+      window.open(data.whatsappUrl, "_blank", "noopener,noreferrer");
+    } catch {
+      const errorMsg = "An unexpected error occurred. Please try again.";
+      setError(errorMsg);
+      toast.error(errorMsg);
+    } finally {
       setIsSubmitting(false);
-      return;
     }
-
-    window.open(data.whatsappUrl, "_blank", "noopener,noreferrer");
-    setIsSubmitting(false);
   }
 
   return (
@@ -94,8 +105,9 @@ export function InquiryForm({ propertyId }: InquiryFormProps) {
       {error ? <p className="text-sm text-red-600">{error}</p> : null}
       <button
         type="submit"
+        id="main-enquiry-button"
         disabled={isSubmitting}
-        className="rounded-md bg-accent px-4 py-2 text-sm font-semibold text-white hover:bg-accent-light disabled:opacity-70"
+        className="w-full rounded-md bg-accent px-4 py-2.5 text-sm font-semibold text-white hover:bg-accent-light disabled:opacity-70 cursor-pointer"
       >
         {isSubmitting ? "Submitting..." : "Submit Inquiry"}
       </button>

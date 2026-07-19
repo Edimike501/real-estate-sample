@@ -2,10 +2,13 @@ import { Prisma, PropertyStatus } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
+import { getDiasporaDisplayPrice, getExchangeRates } from "@/lib/currency";
 import { prisma } from "@/lib/prisma";
+import type { Property } from "@/types";
+import { submitToIndexNow } from "@/lib/indexnow";
 
 const propertyCreateSchema = z.object({
-  slug: z.string().min(3),
+  slug: z.string().min(3).optional(),
   title: z.string().min(3),
   description: z.string().min(10),
   listingType: z.enum(["SALE", "RENTAL", "LAND", "DEVELOPMENT"]),
@@ -15,16 +18,112 @@ const propertyCreateSchema = z.object({
   city: z.string().min(2),
   state: z.string().default("Lagos"),
   country: z.string().default("Nigeria"),
-  address: z.string().optional(),
-  landmark: z.string().optional(),
-  latitude: z.number().optional(),
-  longitude: z.number().optional()
+  address: z.string().optional().nullable(),
+  landmark: z.string().optional().nullable(),
+  lga: z.string().optional().nullable(),
+  latitude: z.number().optional().nullable(),
+  longitude: z.number().optional().nullable(),
+  bedrooms: z.preprocess(
+    (val) =>
+      val === "" || val === null || val === undefined ? null : Number(val),
+    z.number().int().nullable().optional()
+  ),
+  bathrooms: z.preprocess(
+    (val) =>
+      val === "" || val === null || val === undefined ? null : Number(val),
+    z.number().int().nullable().optional()
+  ),
+  toilets: z.preprocess(
+    (val) =>
+      val === "" || val === null || val === undefined ? null : Number(val),
+    z.number().int().nullable().optional()
+  ),
+  sizeSqm: z.preprocess(
+    (val) =>
+      val === "" || val === null || val === undefined ? null : Number(val),
+    z.number().nullable().optional()
+  ),
+  salePrice: z.preprocess(
+    (val) =>
+      val === "" || val === null || val === undefined ? null : Number(val),
+    z.number().nullable().optional()
+  ),
+  rentalPrice: z.preprocess(
+    (val) =>
+      val === "" || val === null || val === undefined ? null : Number(val),
+    z.number().nullable().optional()
+  ),
+  priceFrequency: z
+    .enum(["ONE_OFF", "PER_MONTH", "PER_YEAR"])
+    .nullable()
+    .optional(),
+  availableFrom: z.preprocess(
+    (val) =>
+      val === "" || val === null || val === undefined
+        ? null
+        : new Date(val as string),
+    z.date().nullable().optional()
+  ),
+  leaseTerm: z.string().nullable().optional(),
+  serviceCharge: z.preprocess(
+    (val) =>
+      val === "" || val === null || val === undefined ? null : Number(val),
+    z.number().nullable().optional()
+  ),
+  cautionFee: z.preprocess(
+    (val) =>
+      val === "" || val === null || val === undefined ? null : Number(val),
+    z.number().nullable().optional()
+  ),
+  landSizeSqm: z.preprocess(
+    (val) =>
+      val === "" || val === null || val === undefined ? null : Number(val),
+    z.number().nullable().optional()
+  ),
+  titleType: z.string().nullable().optional(),
+  virtualTourUrl: z.string().nullable().optional(),
+  duplicatedFrom: z.string().optional().nullable(),
+  estimatedCompletion: z.preprocess(
+    (val) =>
+      val === "" || val === null || val === undefined
+        ? null
+        : new Date(val as string),
+    z.date().nullable().optional()
+  ),
+  zoningType: z.string().optional().nullable(),
+  furnished: z.preprocess(
+    (val) => {
+      if (val === "true" || val === true) return true;
+      if (val === "false" || val === false) return false;
+      return null;
+    },
+    z.boolean().nullable().optional()
+  ),
+  petsAllowed: z.preprocess(
+    (val) => {
+      if (val === "true" || val === true) return true;
+      if (val === "false" || val === false) return false;
+      return null;
+    },
+    z.boolean().nullable().optional()
+  ),
+  negotiationStatus: z.preprocess(
+    (val) => (val === null || val === "" ? undefined : val),
+    z.enum(["FIXED", "NEGOTIABLE", "CONTACT_FOR_PRICE"]).optional()
+  ),
+  yearBuilt: z.preprocess(
+    (val) =>
+      val === "" || val === null || val === undefined ? null : Number(val),
+    z.number().int().nullable().optional()
+  )
 });
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
 
+    const ids = searchParams.get("ids");
+    const selectParam = searchParams.get("select");
     const listingType = searchParams.get("listingType");
     const state = searchParams.get("state");
     const city = searchParams.get("city");
@@ -34,12 +133,30 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get("status");
     const search = searchParams.get("search");
     const featured = searchParams.get("featured");
+    const tab = searchParams.get("tab");
     const page = Number(searchParams.get("page") ?? 1);
     const limit = Number(searchParams.get("limit") ?? 12);
 
-    const where: Prisma.PropertyWhereInput = {
-      deletedAt: null
-    };
+    const where: Prisma.PropertyWhereInput = {};
+
+    if (tab === "archived") {
+      where.deletedAt = { not: null };
+    } else {
+      where.deletedAt = null;
+    }
+
+    if (ids) {
+      where.id = { in: ids.split(",") };
+    }
+
+    if (selectParam === "id,title") {
+      const properties = await prisma.property.findMany({
+        where,
+        select: { id: true, title: true },
+        orderBy: { title: "asc" }
+      });
+      return NextResponse.json({ properties });
+    }
 
     if (listingType)
       where.listingType = listingType as Prisma.EnumListingTypeFilter["equals"];
@@ -81,6 +198,7 @@ export async function GET(request: NextRequest) {
             { title: { contains: search, mode: "insensitive" } },
             { description: { contains: search, mode: "insensitive" } },
             { city: { contains: search, mode: "insensitive" } },
+            { lga: { contains: search, mode: "insensitive" } },
             { landmark: { contains: search, mode: "insensitive" } }
           ]
         }
@@ -104,14 +222,28 @@ export async function GET(request: NextRequest) {
         include: {
           media: {
             orderBy: { order: "asc" }
+          },
+          _count: {
+            select: { inquiries: true }
           }
         }
       }),
       prisma.property.count({ where })
     ]);
 
+    const rates = await getExchangeRates();
+    const targetCurrency = searchParams.get("currency");
+    const propertiesWithDiaspora = properties.map((p) => ({
+      ...p,
+      diasporaPrice: getDiasporaDisplayPrice(
+        p as unknown as Property,
+        rates,
+        targetCurrency
+      )
+    }));
+
     return NextResponse.json({
-      properties,
+      properties: propertiesWithDiaspora,
       total,
       page: currentPage,
       totalPages: Math.max(1, Math.ceil(total / perPage))
@@ -128,19 +260,75 @@ export async function GET(request: NextRequest) {
   }
 }
 
+function slugify(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[^\w\s-]/g, "")
+    .replace(/[\s_]+/g, "-")
+    .replace(/--+/g, "-")
+    .replace(/^-+/, "")
+    .replace(/-+$/, "");
+}
+
+async function generateUniqueSlug(title: string, excludePropertyId?: string): Promise<string> {
+  const baseSlug = slugify(title) || "property";
+  let slug = baseSlug;
+  let counter = 1;
+
+  while (true) {
+    const existing = await prisma.property.findUnique({
+      where: { slug }
+    });
+
+    if (!existing || (excludePropertyId && existing.id === excludePropertyId)) {
+      return slug;
+    }
+
+    slug = `${baseSlug}-${counter}`;
+    counter++;
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const payload = propertyCreateSchema.parse(body);
 
+    const finalSlug = await generateUniqueSlug(payload.title);
+
     const property = await prisma.property.create({
       data: {
         ...payload,
+        slug: finalSlug,
         status: payload.status ?? "AVAILABLE"
       }
     });
 
-    return NextResponse.json({ success: true, property }, { status: 201 });
+    // Submit to IndexNow for search engine notification
+    if (property.status === "AVAILABLE") {
+      submitToIndexNow([`/properties/${property.slug}`]).catch(
+        (error: unknown) => {
+          console.error("Failed to submit to IndexNow:", error);
+        }
+      );
+    }
+
+    const rates = await getExchangeRates();
+    const diasporaPrice = getDiasporaDisplayPrice(
+      property as unknown as Property,
+      rates
+    );
+
+    return NextResponse.json(
+      {
+        success: true,
+        property: {
+          ...property,
+          diasporaPrice
+        }
+      },
+      { status: 201 }
+    );
   } catch (error: unknown) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(

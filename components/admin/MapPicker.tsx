@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { MapContainer, Marker, TileLayer, useMapEvents } from "react-leaflet";
+import { useEffect, useMemo, useState, useRef } from "react";
+import { MapContainer, Marker, TileLayer, useMapEvents, useMap } from "react-leaflet";
 import L from "leaflet";
 
 import "@/lib/leaflet-fix";
@@ -10,7 +10,7 @@ import { useDebounce } from "@/hooks/use-debounce.hooks";
 type MapPickerProps = {
   initialLat?: number;
   initialLng?: number;
-  onLocationChange: (lat: number, lng: number, address: string) => void;
+  onLocationChange: (lat: number, lng: number, address: string, addressDetails?: any, isInitial?: boolean) => void;
 };
 
 type MarkerControllerProps = {
@@ -19,6 +19,12 @@ type MarkerControllerProps = {
 };
 
 function MarkerController({ position, onMove }: MarkerControllerProps) {
+  const map = useMap();
+
+  useEffect(() => {
+    map.setView(position, map.getZoom());
+  }, [position, map]);
+
   useMapEvents({
     click(event) {
       onMove(event.latlng.lat, event.latlng.lng);
@@ -47,27 +53,43 @@ export function MapPicker({ initialLat, initialLng, onLocationChange }: MapPicke
   const debouncedCoords = useDebounce(coords, 1100);
   const center = useMemo(() => coords, [coords]);
 
+  // Synchronize state with props when location changes externally
+  const [prevInitial, setPrevInitial] = useState<[number | undefined, number | undefined]>([initialLat, initialLng]);
+  if (prevInitial[0] !== initialLat || prevInitial[1] !== initialLng) {
+    setPrevInitial([initialLat, initialLng]);
+    setCoords([initialLat ?? 6.5244, initialLng ?? 3.3792]);
+  }
+
+  const onLocationChangeRef = useRef(onLocationChange);
+  useEffect(() => {
+    onLocationChangeRef.current = onLocationChange;
+  }, [onLocationChange]);
+
+  const isFirstRun = useRef(true);
+
   useEffect(() => {
     const controller = new AbortController();
+    const isInitial = isFirstRun.current;
+    if (isFirstRun.current) {
+      isFirstRun.current = false;
+    }
 
     async function reverseGeocode() {
       setIsLocating(true);
       try {
         const response = await fetch(
-          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${debouncedCoords[0]}&lon=${debouncedCoords[1]}`,
+          `/api/geocode?lat=${debouncedCoords[0]}&lon=${debouncedCoords[1]}`,
           {
-            headers: {
-              "Accept-Language": "en",
-            },
             signal: controller.signal,
           }
         );
-        const data = (await response.json()) as { display_name?: string };
+        const data = (await response.json()) as { display_name?: string; address?: any };
         const displayName = data.display_name ?? "";
+        const addressObj = data.address || null;
         setAddress(displayName);
-        onLocationChange(debouncedCoords[0], debouncedCoords[1], displayName);
+        onLocationChangeRef.current(debouncedCoords[0], debouncedCoords[1], displayName, addressObj, isInitial);
       } catch {
-        onLocationChange(debouncedCoords[0], debouncedCoords[1], "");
+        onLocationChangeRef.current(debouncedCoords[0], debouncedCoords[1], "", null, isInitial);
       } finally {
         setIsLocating(false);
       }
@@ -76,7 +98,7 @@ export function MapPicker({ initialLat, initialLng, onLocationChange }: MapPicke
     void reverseGeocode();
 
     return () => controller.abort();
-  }, [debouncedCoords, onLocationChange]);
+  }, [debouncedCoords]);
 
   return (
     <div className="space-y-2">

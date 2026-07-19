@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
-import { deletePropertyMedia } from "@/lib/media";
+import { getDiasporaDisplayPrice, getExchangeRates } from "@/lib/currency";
 import { prisma } from "@/lib/prisma";
+import type { Property } from "@/types";
+import { submitToIndexNow } from "@/lib/indexnow";
 
 const updatePropertySchema = z.object({
   slug: z.string().min(3).optional(),
@@ -15,12 +17,106 @@ const updatePropertySchema = z.object({
   city: z.string().min(2).optional(),
   state: z.string().min(2).optional(),
   country: z.string().min(2).optional(),
-  address: z.string().optional(),
-  landmark: z.string().optional(),
-  latitude: z.number().optional(),
-  longitude: z.number().optional(),
+  address: z.string().optional().nullable(),
+  landmark: z.string().optional().nullable(),
+  lga: z.string().optional().nullable(),
+  latitude: z.number().optional().nullable(),
+  longitude: z.number().optional().nullable(),
   isFeatured: z.boolean().optional(),
-  isPinned: z.boolean().optional()
+  isPinned: z.boolean().optional(),
+  bedrooms: z.preprocess(
+    (val) =>
+      val === "" || val === null || val === undefined ? null : Number(val),
+    z.number().int().nullable().optional()
+  ),
+  bathrooms: z.preprocess(
+    (val) =>
+      val === "" || val === null || val === undefined ? null : Number(val),
+    z.number().int().nullable().optional()
+  ),
+  toilets: z.preprocess(
+    (val) =>
+      val === "" || val === null || val === undefined ? null : Number(val),
+    z.number().int().nullable().optional()
+  ),
+  sizeSqm: z.preprocess(
+    (val) =>
+      val === "" || val === null || val === undefined ? null : Number(val),
+    z.number().nullable().optional()
+  ),
+  salePrice: z.preprocess(
+    (val) =>
+      val === "" || val === null || val === undefined ? null : Number(val),
+    z.number().nullable().optional()
+  ),
+  rentalPrice: z.preprocess(
+    (val) =>
+      val === "" || val === null || val === undefined ? null : Number(val),
+    z.number().nullable().optional()
+  ),
+  priceFrequency: z
+    .enum(["ONE_OFF", "PER_MONTH", "PER_YEAR"])
+    .nullable()
+    .optional(),
+  availableFrom: z.preprocess(
+    (val) =>
+      val === "" || val === null || val === undefined
+        ? null
+        : new Date(val as string),
+    z.date().nullable().optional()
+  ),
+  leaseTerm: z.string().nullable().optional(),
+  serviceCharge: z.preprocess(
+    (val) =>
+      val === "" || val === null || val === undefined ? null : Number(val),
+    z.number().nullable().optional()
+  ),
+  cautionFee: z.preprocess(
+    (val) =>
+      val === "" || val === null || val === undefined ? null : Number(val),
+    z.number().nullable().optional()
+  ),
+  landSizeSqm: z.preprocess(
+    (val) =>
+      val === "" || val === null || val === undefined ? null : Number(val),
+    z.number().nullable().optional()
+  ),
+  titleType: z.string().nullable().optional(),
+  virtualTourUrl: z.string().nullable().optional(),
+  duplicatedFrom: z.string().optional().nullable(),
+  estimatedCompletion: z.preprocess(
+    (val) =>
+      val === "" || val === null || val === undefined
+        ? null
+        : new Date(val as string),
+    z.date().nullable().optional()
+  ),
+  zoningType: z.string().optional().nullable(),
+  furnished: z.preprocess(
+    (val) => {
+      if (val === "true" || val === true) return true;
+      if (val === "false" || val === false) return false;
+      return null;
+    },
+    z.boolean().nullable().optional()
+  ),
+  petsAllowed: z.preprocess(
+    (val) => {
+      if (val === "true" || val === true) return true;
+      if (val === "false" || val === false) return false;
+      return null;
+    },
+    z.boolean().nullable().optional()
+  ),
+  negotiationStatus: z.preprocess(
+    (val) => (val === null || val === "" ? undefined : val),
+    z.enum(["FIXED", "NEGOTIABLE", "CONTACT_FOR_PRICE"]).optional()
+  ),
+  yearBuilt: z.preprocess(
+    (val) =>
+      val === "" || val === null || val === undefined ? null : Number(val),
+    z.number().int().nullable().optional()
+  )
 });
 
 export async function GET(
@@ -48,7 +144,19 @@ export async function GET(
       );
     }
 
-    return NextResponse.json({ success: true, property });
+    const rates = await getExchangeRates();
+    const diasporaPrice = getDiasporaDisplayPrice(
+      property as unknown as Property,
+      rates
+    );
+
+    return NextResponse.json({
+      success: true,
+      property: {
+        ...property,
+        diasporaPrice
+      }
+    });
   } catch (error: unknown) {
     return NextResponse.json(
       {
@@ -61,6 +169,35 @@ export async function GET(
   }
 }
 
+function slugify(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[^\w\s-]/g, "")
+    .replace(/[\s_]+/g, "-")
+    .replace(/--+/g, "-")
+    .replace(/^-+/, "")
+    .replace(/-+$/, "");
+}
+
+async function generateUniqueSlug(title: string, excludePropertyId?: string): Promise<string> {
+  const baseSlug = slugify(title) || "property";
+  let slug = baseSlug;
+  let counter = 1;
+
+  while (true) {
+    const existing = await prisma.property.findUnique({
+      where: { slug }
+    });
+
+    if (!existing || (excludePropertyId && existing.id === excludePropertyId)) {
+      return slug;
+    }
+
+    slug = `${baseSlug}-${counter}`;
+    counter++;
+  }
+}
+
 export async function PATCH(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
@@ -68,14 +205,79 @@ export async function PATCH(
   try {
     const { id } = await context.params;
     const body = await request.json();
+
+    if (body.restore === true) {
+      const property = await prisma.property.update({
+        where: { id },
+        data: { deletedAt: null },
+        include: {
+          media: {
+            orderBy: { order: "asc" }
+          }
+        }
+      });
+
+      // Submit to IndexNow for search engine notification
+      if (property.status === "AVAILABLE") {
+        submitToIndexNow([`/properties/${property.slug}`]).catch(
+          (error: unknown) => {
+            console.error("Failed to submit to IndexNow:", error);
+          }
+        );
+      }
+
+      const rates = await getExchangeRates();
+      const diasporaPrice = getDiasporaDisplayPrice(
+        property as unknown as Property,
+        rates
+      );
+      return NextResponse.json({
+        success: true,
+        property: {
+          ...property,
+          diasporaPrice
+        }
+      });
+    }
+
     const payload = updatePropertySchema.parse(body);
+
+    if (payload.title) {
+      payload.slug = await generateUniqueSlug(payload.title, id);
+    }
 
     const property = await prisma.property.update({
       where: { id },
-      data: payload
+      data: payload,
+      include: {
+        media: {
+          orderBy: { order: "asc" }
+        }
+      }
     });
 
-    return NextResponse.json({ success: true, property });
+    // Submit to IndexNow for search engine notification
+    if (property.status === "AVAILABLE") {
+      submitToIndexNow([`/properties/${property.slug}`]).catch(
+        (error: unknown) => {
+          console.error("Failed to submit to IndexNow:", error);
+        }
+      );
+    }
+
+    const rates = await getExchangeRates();
+    const diasporaPrice = getDiasporaDisplayPrice(
+      property as unknown as Property,
+      rates
+    );
+
+    return NextResponse.json({
+      success: true,
+      property: {
+        ...property,
+        diasporaPrice
+      }
+    });
   } catch (error: unknown) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
@@ -102,12 +304,7 @@ export async function DELETE(
   try {
     const { id } = await context.params;
     const property = await prisma.property.findFirst({
-      where: { id, deletedAt: null },
-      include: {
-        media: {
-          select: { id: true, publicId: true, mediaType: true }
-        }
-      }
+      where: { id, deletedAt: null }
     });
 
     if (!property) {
@@ -117,21 +314,12 @@ export async function DELETE(
       );
     }
 
-    await Promise.all(
-      property.media.map((media) =>
-        deletePropertyMedia(media.publicId, media.mediaType)
-      )
-    );
-
-    await prisma.$transaction([
-      prisma.propertyMedia.deleteMany({ where: { propertyId: property.id } }),
-      prisma.property.update({
-        where: { id: property.id },
-        data: {
-          deletedAt: new Date()
-        }
-      })
-    ]);
+    await prisma.property.update({
+      where: { id: property.id },
+      data: {
+        deletedAt: new Date()
+      }
+    });
 
     return NextResponse.json({ success: true });
   } catch (error: unknown) {
@@ -139,7 +327,7 @@ export async function DELETE(
       {
         success: false,
         error:
-          error instanceof Error ? error.message : "Failed to delete property."
+          error instanceof Error ? error.message : "Failed to archive property."
       },
       { status: 500 }
     );

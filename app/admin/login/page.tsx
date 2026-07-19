@@ -4,6 +4,8 @@ import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 
+import { BackButton } from "@/components/ui/BackButton";
+
 export default function AdminLoginPage() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
@@ -34,7 +36,10 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-bg-primary p-4">
+    <main className="flex min-h-screen flex-col items-center justify-center bg-bg-primary p-4">
+      <div className="mb-4 w-full max-w-md">
+        <BackButton href="/" label="Back to Site" variant="minimal" />
+      </div>
       <form onSubmit={handleSubmit} className="w-full max-w-md space-y-4 rounded-lg border border-border bg-bg-secondary p-6">
         <h1 className="text-2xl font-bold text-text-primary">Admin Login</h1>
         <input

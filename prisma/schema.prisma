@@ -73,6 +73,7 @@ model Property {
   isPinned          Boolean           @default(false)
   address           String?
   landmark          String?
+  lga               String?
   city              String
   state             String            @default("Lagos")
   country           String            @default("Nigeria")
@@ -92,6 +93,12 @@ model Property {
   landSizeSqm       Float?
   titleType         String?
   virtualTourUrl    String?
+  duplicatedFrom    String?
+  estimatedCompletion DateTime?
+  zoningType        String?
+  furnished         Boolean?
+  petsAllowed       Boolean?
+  yearBuilt         Int?
   media             PropertyMedia[]
   inquiries         Inquiry[]
   createdAt         DateTime          @default(now())
@@ -139,4 +146,11 @@ model User {
   createdBy String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model ExchangeRate {
+  id          String   @id @default(cuid())
+  currency    String   @unique // e.g., "USD", "GBP", "EUR", "AED"
+  rateToNaira Float    // How many Naira per 1 unit of foreign currency (e.g., 1500.00)
+  updatedAt   DateTime @updatedAt
 }

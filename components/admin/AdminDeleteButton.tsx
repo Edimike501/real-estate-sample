@@ -4,6 +4,8 @@ import { Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { toast } from "sonner";
+
 type AdminDeleteButtonProps = {
   endpoint: string;
   label: string;
@@ -15,18 +17,37 @@ export function AdminDeleteButton({ endpoint, label, confirmMessage, redirectTo 
   const router = useRouter();
   const [isDeleting, setIsDeleting] = useState(false);
 
-  async function onDelete() {
-    const confirmed = window.confirm(confirmMessage);
-    if (!confirmed) return;
-
+  async function performDelete() {
     setIsDeleting(true);
-    const response = await fetch(endpoint, { method: "DELETE" });
-    setIsDeleting(false);
+    try {
+      const response = await fetch(endpoint, { method: "DELETE" });
+      setIsDeleting(false);
 
-    if (response.ok) {
-      router.push(redirectTo);
-      router.refresh();
+      if (response.ok) {
+        toast.success("Successfully deleted.");
+        router.push(redirectTo);
+        router.refresh();
+      } else {
+        toast.error("Failed to delete.");
+      }
+    } catch {
+      setIsDeleting(false);
+      toast.error("Failed to delete.");
     }
+  }
+
+  function onDelete() {
+    toast.warning("Confirm Action", {
+      description: confirmMessage,
+      action: {
+        label: "Delete",
+        onClick: () => void performDelete(),
+      },
+      cancel: {
+        label: "Cancel",
+        onClick: () => {},
+      },
+    });
   }
 
   return (

@@ -53,3 +53,15 @@ export function truncateText(text: string, length: number): string {
   if (text.length <= length) return text;
   return text.slice(0, length) + "...";
 }
+
+/**
+ * Format enum strings to human-readable strings (e.g. SUPER_ADMIN -> Super Admin, SALE -> Sale)
+ */
+export function formatEnum(value: string | undefined | null): string {
+  if (!value) return "";
+  return value
+    .replace(/_/g, " ")
+    .toLowerCase()
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+

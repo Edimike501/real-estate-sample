@@ -29,7 +29,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   if (!property) {
     return {
-      title: "Property Not Found — Opollo Luxury Properties",
+      title: "Property Not Found — Aura Luxury Properties",
       description: "The property you're looking for could not be found."
     };
   }
@@ -46,13 +46,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const ogDescription = buildPropertyDescription(property);
 
   return {
-    title: `${property.title} — ${location} | Opollo Luxury Properties`,
+    title: `${property.title} — ${location} | Aura Luxury Properties`,
     description: property.description.slice(0, 160),
     openGraph: {
       title: property.title,
       description: ogDescription,
-      url: `https://www.opolloluxuries.com/properties/${property.slug}`,
-      siteName: "Opollo Luxury Properties",
+      url: `https://www.auraluxuryproperties.com/properties/${property.slug}`,
+      siteName: "Aura Luxury Properties",
       images: [
         {
           url: optimizedImage,

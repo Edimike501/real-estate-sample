@@ -165,7 +165,7 @@ export default async function AdminDashboardPage() {
           Dashboard Overview
         </h1>
         <p className="mt-1 text-sm text-text-secondary">
-          Welcome back. Here is a summary of your Opollo Luxury Properties
+          Welcome back. Here is a summary of your Aura Luxury Properties
           activity.
         </p>
       </div>

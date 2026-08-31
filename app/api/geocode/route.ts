@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
         )}&format=json&limit=5&addressdetails=1`,
         {
           headers: {
-            "User-Agent": "OpolloLuxuriesRealEstate/1.0 (contact@opollo.com)",
+            "User-Agent": "AuraLuxuryRealEstate/1.0 (contact@auraluxury.com)",
             "Accept-Language": "en",
           },
         }
@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
         )}&lon=${encodeURIComponent(lon)}`,
         {
           headers: {
-            "User-Agent": "OpolloLuxuriesRealEstate/1.0 (contact@opollo.com)",
+            "User-Agent": "AuraLuxuryRealEstate/1.0 (contact@auraluxury.com)",
             "Accept-Language": "en",
           },
         }

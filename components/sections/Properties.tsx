@@ -4,7 +4,7 @@ import { PropertyCard } from "@/components/property/PropertyCard";
 import AnimatedSection from "@/components/ui/AnimatedSection";
 import { useDiasporaLocation } from "@/hooks/useDiasporaLocation";
 import { useProperties } from "@/hooks/useProperties";
-import { siteMetadata } from "@/metadata/site";
+import type { Property } from "@/types";
 import Link from "next/link";
 
 export default function PropertiesSection() {
@@ -16,7 +16,7 @@ export default function PropertiesSection() {
     },
     currency || "USD"
   );
-  const phone = siteMetadata.contact.whatsapp;
+  // const phone = siteMetadata.contact.whatsapp;
 
   if (isLoading) {
     return (
@@ -74,7 +74,7 @@ export default function PropertiesSection() {
           </p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {featured.map((property) => (
+          {featured.map((property: Property) => (
             <PropertyCard key={property.id} property={property} priority />
           ))}
         </div>

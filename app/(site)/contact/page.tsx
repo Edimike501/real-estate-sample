@@ -9,24 +9,24 @@ import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "Contact Us",
-  // becomes → "Contact Us | Opollo Luxury Properties" via the template in layout.tsx
+  // becomes → "Contact Us | Aura Luxury Properties" via the template in layout.tsx
 
   description:
-    "Get in touch with Opollo Luxury Properties Ltd. Whether you're in Nigeria or abroad, our team is ready to help you find, buy, or rent your ideal property. Reach us via WhatsApp, email or visit our Lagos office.",
+    "Get in touch with Aura Luxury Properties Ltd. Whether you're in Nigeria or abroad, our team is ready to help you find, buy, or rent your ideal property. Reach us via WhatsApp, email or visit our Lagos office.",
 
   keywords: [
-    "contact Opollo Luxury Properties",
+    "contact Aura Luxury Properties",
     "real estate agent Lagos contact",
     "buy property Nigeria contact",
     "Nigerian Diaspora property enquiry",
     "Lagos real estate consultation",
     "property investment enquiry Nigeria",
-    "Opollo Properties WhatsApp",
+    "Aura Properties WhatsApp",
     "Abule Ado real estate office"
   ],
 
   openGraph: {
-    title: "Contact Opollo Luxury Properties",
+    title: "Contact Aura Luxury Properties",
     description:
       "Reach out to our team for property enquiries, consultations, and investment advice. We serve buyers in Nigeria and the Diaspora — available via WhatsApp, email and in person in Lagos.",
     url: `${process.env.NEXT_PUBLIC_APP_URL}/contact`,
@@ -37,14 +37,14 @@ export const metadata: Metadata = {
         url: "/og-image.jpg",
         width: 1200,
         height: 630,
-        alt: "Contact Opollo Luxury Properties — Lagos, Nigeria"
+        alt: "Contact Aura Luxury Properties — Lagos, Nigeria"
       }
     ]
   },
 
   twitter: {
     card: "summary_large_image",
-    title: "Contact Opollo Luxury Properties",
+    title: "Contact Aura Luxury Properties",
     description:
       "Property enquiries, investment consultations, and more. Reach our Lagos team via WhatsApp or email — we serve Nigeria and the Diaspora.",
     images: ["/og-image.jpg"]
@@ -58,13 +58,13 @@ export const metadata: Metadata = {
 
 export default function ContactPage() {
   const baseUrl =
-    process.env.NEXT_PUBLIC_APP_URL ?? "https://www.opolloluxuries.com";
+    process.env.NEXT_PUBLIC_APP_URL ?? "https://www.auraluxuryproperties.com";
 
   const contactPageSchema = {
     "@context": "https://schema.org",
     "@type": "ContactPage",
     url: `${baseUrl.replace(/\/$/, "")}/contact`,
-    name: "Contact Opollo Luxury Properties",
+    name: "Contact Aura Luxury Properties",
     mainEntity: {
       "@type": "LocalBusiness",
       name: siteMetadata.company.name,
@@ -106,7 +106,7 @@ export default function ContactPage() {
             <aside className="bg-bg-secondary border border-border rounded-lg p-6 space-y-6">
               <div>
                 <h2 className="text-2xl font-display font-bold text-text-primary mb-2">
-                  Opollo Luxury Properties
+                  Aura Luxury Properties
                 </h2>
                 <p className="text-text-secondary">
                   Premium real estate development, sales, and consultancy for

@@ -11,7 +11,7 @@ export type CurrencyRates = {
   error: boolean;
 };
 
-const CACHE_KEY = "opollo_fx_rates";
+const CACHE_KEY = "aura_fx_rates";
 const TTL_MS = 6 * 60 * 60 * 1000; // 6 hours
 
 interface CachedData {

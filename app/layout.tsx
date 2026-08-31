@@ -13,7 +13,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL(
-    process.env.NEXT_PUBLIC_APP_URL ?? "https://www.opolloluxuries.com"
+    process.env.NEXT_PUBLIC_APP_URL ?? "https://www.auraluxuryproperties.com"
   ),
 
   title: {
@@ -31,12 +31,12 @@ export const metadata: Metadata = {
     "land for sale",
     "residential properties",
     "commercial properties",
-    "Opollo", // ← ADD brand name
-    "Opollo Luxury", // ← ADD brand name
-    "Opollo Luxury Properties", // ← ADD brand name
-    "Opollo Luxury Properties Ltd", // ← ADD brand name
-    "buy house Lagos", // ← ADD high-intent keyword
-    "Nigerian Diaspora real estate" // ← ADD Diaspora keyword
+    "Aura",
+    "Aura Luxury",
+    "Aura Luxury Properties",
+    "Aura Luxury Properties Ltd",
+    "buy house Lagos",
+    "Nigerian Diaspora real estate"
   ],
   authors: [{ name: siteMetadata.company.owner || siteMetadata.company.name }],
   icons: {
@@ -55,7 +55,7 @@ export const metadata: Metadata = {
     title: siteMetadata.company.name,
     description: siteMetadata.company.description,
     type: "website",
-    url: "https://www.opolloluxuries.com", // ← ADD THIS (fixes og:url)
+    url: "https://www.auraluxuryproperties.com", // ← ADD THIS (fixes og:url)
     siteName: siteMetadata.company.name, // ← ADD THIS (fixes og:site_name)
     locale: "en_NG", // ← ADD THIS
     images: [
@@ -98,7 +98,7 @@ export default async function RootLayout({
   const nonce = headerList.get("x-nonce") || undefined;
 
   const baseUrl =
-    process.env.NEXT_PUBLIC_APP_URL ?? "https://www.opolloluxuries.com";
+    process.env.NEXT_PUBLIC_APP_URL ?? "https://www.auraluxuryproperties.com";
 
   const globalOrganizationSchema = {
     "@context": "https://schema.org",

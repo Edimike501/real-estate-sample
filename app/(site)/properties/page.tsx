@@ -9,9 +9,9 @@ import { Suspense } from "react";
 // 1. Pristine Normalized Metadata Architecture
 export const metadata: Metadata = {
   metadataBase: new URL(
-    process.env.NEXT_PUBLIC_APP_URL ?? "https://www.opolloluxuries.com"
+    process.env.NEXT_PUBLIC_APP_URL ?? "https://www.auraluxuryproperties.com"
   ),
-  title: "All Properties - Opollo Luxury Properties",
+  title: "All Properties - Aura Luxury Properties",
   description:
     "Search, filter, and browse available luxury real estate listings in Lagos, Nigeria.",
   alternates: {
@@ -22,7 +22,7 @@ export const metadata: Metadata = {
 
 export default function PropertiesPage() {
   const baseUrl =
-    process.env.NEXT_PUBLIC_APP_URL ?? "https://www.opolloluxuries.com";
+    process.env.NEXT_PUBLIC_APP_URL ?? "https://www.auraluxuryproperties.com";
 
   // 2. Align Schema Links with the Canonical Metadata
   const collectionSchema = {
@@ -31,7 +31,7 @@ export default function PropertiesPage() {
     // Cleaned up hash mapping string templates:
     "@id": `${baseUrl.replace(/\/$/, "")}/properties#collection`,
     url: `${baseUrl.replace(/\/$/, "")}/properties`,
-    name: "All Properties - Opollo Luxury Properties",
+    name: "All Properties - Aura Luxury Properties",
     description:
       "Search, filter, and browse available luxury real estate listings in Lagos, Nigeria."
   };

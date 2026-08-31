@@ -89,7 +89,7 @@ export function UserForm({ user }: UserFormProps) {
           id="name"
           name="name"
           defaultValue={user?.name}
-          placeholder="e.g. Opollo Admin"
+          placeholder="e.g. Aura Admin"
           required
           className="w-full rounded-md border border-border bg-bg-primary px-3 py-2.5 text-sm text-text-primary focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent/40"
         />

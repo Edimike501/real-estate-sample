@@ -1,5 +1,5 @@
 const INDEXNOW_KEY = process.env.INDEXNOW_KEY;
-const INDEXNOW_HOST = "www.opolloluxuries.com";
+const INDEXNOW_HOST = "www.auraluxuryproperties.com";
 
 export async function submitToIndexNow(
   urls: string[]

@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 
-const STORAGE_KEY = "opollo_bookmarks";
+const STORAGE_KEY = "aura_bookmarks";
 const TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
 interface BookmarkData {
@@ -29,6 +29,7 @@ export function BookmarksProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (typeof window === "undefined") return;
 
+    let loadedIds: string[] = [];
     try {
       const item = window.localStorage.getItem(STORAGE_KEY);
       if (item) {
@@ -37,15 +38,18 @@ export function BookmarksProvider({ children }: { children: React.ReactNode }) {
         // Check TTL
         if (now - parsed.savedAt > TTL_MS) {
           window.localStorage.removeItem(STORAGE_KEY);
-          setBookmarks([]);
         } else {
-          setBookmarks(parsed.ids);
+          loadedIds = parsed.ids;
         }
       }
     } catch (error) {
       console.error("Error reading bookmarks from localStorage", error);
     }
-    setIsInitialized(true);
+
+    queueMicrotask(() => {
+      setBookmarks(loadedIds);
+      setIsInitialized(true);
+    });
   }, []);
 
   const saveBookmarks = useCallback((newIds: string[]) => {

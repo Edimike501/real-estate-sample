@@ -65,7 +65,7 @@ export async function uploadPropertyMedia(
     );
   }
 
-  const folder = `opollo-luxuries/properties/${propertyId}`;
+  const folder = `aura-luxury/properties/${propertyId}`;
   const [main, thumb] = await Promise.all([
     uploadBuffer(compressed, `${folder}/${uniqueBaseName}`),
     uploadBuffer(thumbnail, `${folder}/thumbs/${uniqueBaseName}`)
@@ -117,7 +117,7 @@ async function uploadPropertyVideo(
     return saveLocalPropertyVideo(buffer, fileName, uniqueBaseName, propertyId, mediaType);
   }
 
-  const folder = `opollo-luxuries/properties/${propertyId}/${mediaType === "TOUR" ? "tours" : "videos"}`;
+  const folder = `aura-luxury/properties/${propertyId}/${mediaType === "TOUR" ? "tours" : "videos"}`;
   const upload = await uploadBuffer(buffer, `${folder}/${uniqueBaseName}`, "video");
 
   return {

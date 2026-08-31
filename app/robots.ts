@@ -7,7 +7,7 @@ export default function robots(): MetadataRoute.Robots {
       allow: "/",
       disallow: ["/api/", "/admin/"] // Protect sensitive routes if any
     },
-    sitemap: `${process.env.NEXT_PUBLIC_APP_URL ?? "https://www.opolloluxuries.com"}/sitemap.xml`
+    sitemap: `${process.env.NEXT_PUBLIC_APP_URL ?? "https://www.auraluxuryproperties.com"}/sitemap.xml`
   }; */
   return {
     rules: [
@@ -29,6 +29,6 @@ export default function robots(): MetadataRoute.Robots {
         ]
       }
     ],
-    sitemap: `${process.env.NEXT_PUBLIC_APP_URL ?? "https://www.opolloluxuries.com"}/sitemap.xml`
+    sitemap: `${process.env.NEXT_PUBLIC_APP_URL ?? "https://www.auraluxuryproperties.com"}/sitemap.xml`
   };
 }

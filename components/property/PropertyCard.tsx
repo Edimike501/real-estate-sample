@@ -65,7 +65,7 @@ export function PropertyCard({
       {/* Card Image Section */}
       <div className="relative h-60 bg-bg-tertiary overflow-hidden shrink-0">
         <div
-          className={`h-full w-full transition duration-300 ${isSoldOrLet ? "opacity-70 grayscale-[30%]" : ""}`}>
+          className={`h-full w-full transition duration-300 ${isSoldOrLet ? "opacity-70 grayscale-30" : ""}`}>
           <CloudinaryImage
             src={firstImage}
             alt={property.title}
@@ -119,9 +119,7 @@ export function PropertyCard({
           <h3 className="text-lg font-semibold text-text-primary line-clamp-1">
             {property.title}
           </h3>
-          <p className="text-xs text-text-muted">
-            {locationStr}
-          </p>
+          <p className="text-xs text-text-muted">{locationStr}</p>
         </div>
 
         {/* Price display with currency switcher support */}
@@ -188,8 +186,8 @@ export function PropertyCard({
                   guestPhone: session?.phone || "0000000000",
                   guestEmail: session?.email || undefined,
                   propertyId: property.id,
-                  source: InquirySource.FEATURED_CARD,
-                }),
+                  source: InquirySource.FEATURED_CARD
+                })
               }).catch((err) => {
                 console.error("Error submitting property card inquiry:", err);
               });

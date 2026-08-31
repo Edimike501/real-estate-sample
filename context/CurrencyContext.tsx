@@ -1,7 +1,7 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from "react";
-import { useCurrencyRate, DiasporaCurrency, CurrencyRates } from "@/hooks/useCurrencyRate";
+import { DiasporaCurrency, useCurrencyRate } from "@/hooks/useCurrencyRate";
+import React, { createContext, useContext, useEffect, useState } from "react";
 
 type SelectedCurrency = DiasporaCurrency | "NGN";
 
@@ -14,7 +14,9 @@ interface CurrencyContextProps {
   error: boolean;
 }
 
-const CurrencyContext = createContext<CurrencyContextProps | undefined>(undefined);
+const CurrencyContext = createContext<CurrencyContextProps | undefined>(
+  undefined
+);
 
 export function CurrencyProvider({ children }: { children: React.ReactNode }) {
   const { rates, lastUpdated, loading, error } = useCurrencyRate();
@@ -23,9 +25,11 @@ export function CurrencyProvider({ children }: { children: React.ReactNode }) {
   // Load from localStorage on mount
   useEffect(() => {
     if (typeof window !== "undefined") {
-      const saved = window.localStorage.getItem("opollo_selected_currency");
+      const saved = window.localStorage.getItem("aura_selected_currency");
       if (saved) {
-        setCurrencyState(saved as SelectedCurrency);
+        queueMicrotask(() => {
+          setCurrencyState(saved as SelectedCurrency);
+        });
       }
     }
   }, []);
@@ -33,12 +37,13 @@ export function CurrencyProvider({ children }: { children: React.ReactNode }) {
   const setCurrency = (curr: SelectedCurrency) => {
     setCurrencyState(curr);
     if (typeof window !== "undefined") {
-      window.localStorage.setItem("opollo_selected_currency", curr);
+      window.localStorage.setItem("aura_selected_currency", curr);
     }
   };
 
   return (
-    <CurrencyContext.Provider value={{ currency, setCurrency, rates, lastUpdated, loading, error }}>
+    <CurrencyContext.Provider
+      value={{ currency, setCurrency, rates, lastUpdated, loading, error }}>
       {children}
     </CurrencyContext.Provider>
   );

@@ -11,7 +11,7 @@ import { siteMetadata } from "@/metadata/site";
 
 export default function HomePage() {
   const baseUrl =
-    process.env.NEXT_PUBLIC_APP_URL ?? "https://www.opolloluxuries.com";
+    process.env.NEXT_PUBLIC_APP_URL ?? "https://www.auraluxuryproperties.com";
 
   const homepageSchema = {
     "@context": "https://schema.org",

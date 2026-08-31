@@ -17,18 +17,18 @@ export default function Logo({
   showText = false
 }: LogoProps) {
   const content = (
-    <div className={`flex items-center gap-2 ${className}`}>
+    <div className={`flex items-center gap-2.5 ${className}`}>
       <Image
-        src="/images/opollo-luxury.png"
-        alt="Opollo Luxury Properties Logo"
+        src="/images/aura-logo.jpg"
+        alt="Aura Luxury Properties Logo"
         width={width}
         height={height}
         priority
-        className="w-auto h-auto"
+        className="w-auto h-auto rounded-lg shadow-sm border border-emerald-500/20 object-cover"
       />
       {showText && (
-        <span className="font-display font-bold text-lg hidden sm:inline text-accent">
-          Opollo Luxury
+        <span className="font-display font-bold text-lg hidden sm:inline text-accent tracking-wide">
+          Aura Luxury
         </span>
       )}
     </div>

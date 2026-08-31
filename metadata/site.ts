@@ -3,31 +3,30 @@ import type { SiteConfig } from "@/types";
 export const siteMetadata: SiteConfig = {
   // Brand
   company: {
-    name: "Opollo Luxury Properties",
-    tagline: "Premium Luxury Real Estate for Nigeria & Diaspora",
+    name: "Aura Luxury Properties",
+    tagline: "Elevated Living & Premium Real Estate Investments",
     description:
       "Premium real estate development, sales & consultancy in Lagos. Expert property investment and transparent legal solutions for local and diaspora buyers.",
-    founded: "2020",
-    logo: "/images/opollo-luxury.png",
-    owner: "Taylor Atu Goodnews"
+    founded: "2022",
+    logo: "/images/aura-logo.jpg",
+    owner: "Portfolio Showcase Team"
   },
 
   // Contact
   contact: {
-    whatsapp: "+2347049785717",
+    whatsapp: "+2347000000000",
     whatsappMessage:
-      "Hi, I found your website and I'm interested in your properties.",
-    email: "opolloluxuries@gmail.com",
-    phone: "+2347049785717",
+      "Hi Aura Luxury Properties, I found your portfolio site and I'm interested in your properties.",
+    email: "contact@auraluxury.com",
+    phone: "+2347000000000",
     address:
-      "A2 59/60, Agric Building Materials Complex, Abule Ado Junction, Lagos, Nigeria",
-    instagram: "https://instagram.com/opolloluxury",
-    facebook: "https://www.facebook.com/share/1BV2PkBwbv/",
-    facebookPage: "https://www.facebook.com/share/1BV2PkBwbv/",
-    // facebookPage: "https://www.facebook.com/share/19DkY5xzNW/",
-    tiktok: "https://www.tiktok.com/@opollo.luxury.pro?_r=1&_t=ZS-97ErOeaB0B3",
+      "Victoria Island Luxury Tower, Suite 402, Lagos, Nigeria",
+    instagram: "https://instagram.com/auraluxuryproperties",
+    facebook: "https://facebook.com/auraluxuryproperties",
+    facebookPage: "https://facebook.com/auraluxuryproperties",
+    tiktok: "https://tiktok.com/@auraluxuryproperties",
     linkedin:
-      "https://www.linkedin.com/in/opollo-luxury-properties-ltd-608b7a416"
+      "https://linkedin.com/company/aura-luxury-properties"
   },
 
   // Hero section
@@ -219,7 +218,7 @@ export const siteMetadata: SiteConfig = {
 
   // Footer
   footer: {
-    tagline: "Premium luxury real estate for Nigeria and the Diaspora.",
-    copyright: `© ${new Date().getFullYear()} Opollo Luxury Properties Ltd. All rights reserved.`
+    tagline: "Elevated luxury real estate for Nigeria and the Diaspora.",
+    copyright: `© ${new Date().getFullYear()} Aura Luxury Properties Ltd. All rights reserved.`
   }
 };

@@ -22,9 +22,9 @@ export async function sendInquiryNotification(params: InquiryEmailParams): Promi
   const { guestName, guestPhone, guestEmail, propertyTitle, propertyLocation, message, source } = params;
 
   await resend.emails.send({
-    from: "Opollo Website <notifications@opolloluxuries.com>",
+    from: "Aura Luxury Website <notifications@auraluxury.com>",
     to: adminEmail,
-    subject: propertyTitle ? `New Inquiry: ${propertyTitle}` : "New General Inquiry - Opollo Website",
+    subject: propertyTitle ? `New Inquiry: ${propertyTitle}` : "New General Inquiry - Aura Luxury Website",
     html: `
       <h2>New Inquiry Received</h2>
       <table cellpadding="8" style="border-collapse:collapse">

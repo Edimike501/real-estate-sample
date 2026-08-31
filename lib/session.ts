@@ -1,4 +1,4 @@
-const SESSION_KEY = "opollo_guest";
+const SESSION_KEY = "aura_guest";
 const TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
 export type GuestSession = {

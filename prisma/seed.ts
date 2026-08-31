@@ -4,16 +4,29 @@ import bcrypt from "bcryptjs";
 const prisma = new PrismaClient();
 
 async function main() {
-  const adminPassword = await bcrypt.hash("atu-superadmin-secret!@#", 12);
+  const adminPassword = await bcrypt.hash("PortfolioDemo2026!", 12);
+  const agentPassword = await bcrypt.hash("AgentDemo2026!", 12);
 
   await prisma.user.upsert({
-    where: { email: "superadmin@opolloluxuries.com" },
-    update: {},
+    where: { email: "admin@auraluxury.com" },
+    update: { password: adminPassword },
     create: {
-      name: "Super Admin",
-      email: "superadmin@opolloluxuries.com",
+      name: "Aura Super Admin",
+      email: "admin@auraluxury.com",
       password: adminPassword,
       role: "SUPER_ADMIN",
+      isActive: true
+    }
+  });
+
+  await prisma.user.upsert({
+    where: { email: "agent@auraluxury.com" },
+    update: { password: agentPassword },
+    create: {
+      name: "Aura Portfolio Agent",
+      email: "agent@auraluxury.com",
+      password: agentPassword,
+      role: "ADMIN",
       isActive: true
     }
   });

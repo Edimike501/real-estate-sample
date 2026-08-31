@@ -23,7 +23,7 @@ export function buildWhatsAppMessage(params: BuildWhatsAppLinkParams): string {
 
   if (propertyTitle) {
     return (
-      `Hi Opollo Luxury Properties, my name is ${guestName}.\n\n` +
+      `Hi Aura Luxury Properties, my name is ${guestName}.\n\n` +
       `I'm interested in the following property:\n` +
       `*${propertyTitle}*` +
       (propertyLocation ? `\n📍 ${propertyLocation}` : "") +
@@ -32,7 +32,7 @@ export function buildWhatsAppMessage(params: BuildWhatsAppLinkParams): string {
     );
   }
   return (
-    `Hi Opollo Luxury Properties, my name is ${guestName}.\n\n` +
+    `Hi Aura Luxury Properties, my name is ${guestName}.\n\n` +
     `I'd like to make a general enquiry about your properties.`
   );
 }

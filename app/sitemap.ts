@@ -4,7 +4,7 @@ import { MetadataRoute } from "next";
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // 1. Force sanitize the baseUrl so it NEVER ends with a trailing slash
   const rawBaseUrl =
-    process.env.NEXT_PUBLIC_APP_URL ?? "https://www.opolloluxuries.com";
+    process.env.NEXT_PUBLIC_APP_URL ?? "https://www.auraluxuryproperties.com";
   const baseUrl = rawBaseUrl.replace(/\/$/, "");
 
   // 2. Clear explicit base routes mappings

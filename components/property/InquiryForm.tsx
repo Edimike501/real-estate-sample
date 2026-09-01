@@ -1,9 +1,10 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useMemo } from "react";
 import { toast } from "sonner";
 
 import { useGuestSession } from "@/hooks/useGuestSession";
+import { useSubmitInquiry } from "@/hooks/useInquiries";
 import { InquirySource } from "@/types/enums";
 
 type InquiryFormProps = {
@@ -12,22 +13,19 @@ type InquiryFormProps = {
 
 export function InquiryForm({ propertyId }: InquiryFormProps) {
   const { session, saveSession } = useGuestSession();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const submitInquiryMutation = useSubmitInquiry();
 
   const defaults = useMemo(
     () => ({
       name: session?.name ?? "",
       phone: session?.phone ?? "",
-      email: session?.email ?? "",
+      email: session?.email ?? ""
     }),
     [session]
   );
 
-  async function onSubmit(event: FormEvent<HTMLFormElement>) {
+  function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setIsSubmitting(true);
-    setError(null);
 
     const formData = new FormData(event.currentTarget);
     const guestName = String(formData.get("guestName") ?? "");
@@ -37,39 +35,27 @@ export function InquiryForm({ propertyId }: InquiryFormProps) {
 
     saveSession({ name: guestName, phone: guestPhone, email: guestEmail || undefined });
 
-    try {
-      const response = await fetch("/api/inquiries", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          guestName,
-          guestPhone,
-          guestEmail: guestEmail || undefined,
-          propertyId,
-          source: propertyId ? InquirySource.PROPERTY_PAGE : InquirySource.CONTACT_FORM,
-          message: message || undefined,
-        }),
-      });
-
-      const data = (await response.json()) as { success?: boolean; whatsappUrl?: string; error?: string };
-
-      if (!response.ok || !data.success || !data.whatsappUrl) {
-        const errorMsg = data.error ?? "Failed to submit inquiry.";
-        setError(errorMsg);
-        toast.error(errorMsg);
-        setIsSubmitting(false);
-        return;
+    submitInquiryMutation.mutate(
+      {
+        guestName,
+        guestPhone,
+        guestEmail: guestEmail || undefined,
+        propertyId,
+        source: propertyId ? InquirySource.PROPERTY_PAGE : InquirySource.CONTACT_FORM,
+        message: message || undefined
+      },
+      {
+        onSuccess: (data) => {
+          toast.success("Inquiry submitted! Redirecting to WhatsApp...");
+          if (data?.whatsappUrl) {
+            window.open(data.whatsappUrl, "_blank", "noopener,noreferrer");
+          }
+        },
+        onError: (err) => {
+          toast.error(err instanceof Error ? err.message : "Failed to submit inquiry.");
+        }
       }
-
-      toast.success("Inquiry submitted! Redirecting to WhatsApp...");
-      window.open(data.whatsappUrl, "_blank", "noopener,noreferrer");
-    } catch {
-      const errorMsg = "An unexpected error occurred. Please try again.";
-      setError(errorMsg);
-      toast.error(errorMsg);
-    } finally {
-      setIsSubmitting(false);
-    }
+    );
   }
 
   return (
@@ -102,14 +88,12 @@ export function InquiryForm({ propertyId }: InquiryFormProps) {
         placeholder="Tell us what you need"
         className="w-full rounded-md border border-border bg-bg-primary px-3 py-2 text-sm"
       />
-      {error ? <p className="text-sm text-red-600">{error}</p> : null}
       <button
         type="submit"
         id="main-enquiry-button"
-        disabled={isSubmitting}
-        className="w-full rounded-md bg-accent px-4 py-2.5 text-sm font-semibold text-white hover:bg-accent-light disabled:opacity-70 cursor-pointer"
-      >
-        {isSubmitting ? "Submitting..." : "Submit Inquiry"}
+        disabled={submitInquiryMutation.isPending}
+        className="w-full rounded-md bg-accent px-4 py-2.5 text-sm font-semibold text-white hover:bg-accent-light disabled:opacity-70 cursor-pointer">
+        {submitInquiryMutation.isPending ? "Submitting..." : "Submit Inquiry"}
       </button>
     </form>
   );

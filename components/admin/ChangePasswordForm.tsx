@@ -1,19 +1,21 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { toast } from "sonner";
 import {
-  User as UserIcon,
-  KeyRound,
+  Check,
   Eye,
   EyeOff,
-  Check,
-  X,
-  Lock
+  KeyRound,
+  Lock,
+  User as UserIcon,
+  X
 } from "lucide-react";
-import { type User } from "@/types";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { toast } from "sonner";
+
+import { useChangePassword } from "@/hooks/useUsers";
 import { formatEnum } from "@/lib/utils";
+import { type User } from "@/types";
 
 interface ChangePasswordFormProps {
   user: Omit<User, "password">;
@@ -21,61 +23,40 @@ interface ChangePasswordFormProps {
 
 export function ChangePasswordForm({ user }: ChangePasswordFormProps) {
   const router = useRouter();
-  
+
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  
+
   const [showCurrent, setShowCurrent] = useState(false);
   const [showNew, setShowNew] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
-  
-  const [loading, setLoading] = useState(false);
-  const [status, setStatus] = useState("");
 
-  const hasMinLength = newPassword.length >= 8;
+  const changePasswordMutation = useChangePassword();
+
+  const hasMinLength = newPassword.length >= 6;
   const passwordsMatch = newPassword === confirmPassword && confirmPassword.length > 0;
   const isFormValid = hasMinLength && passwordsMatch && currentPassword.length > 0;
 
-  async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
+  function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!isFormValid) return;
 
-    setLoading(true);
-    setStatus("");
-
-    try {
-      const response = await fetch("/api/users/change-password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          currentPassword,
-          newPassword,
-          confirmPassword,
-        }),
-      });
-
-      const data = await response.json().catch(() => null);
-
-      if (response.ok) {
-        toast.success("Password changed successfully!");
-        setCurrentPassword("");
-        setNewPassword("");
-        setConfirmPassword("");
-        setStatus("success");
-        router.refresh();
-      } else {
-        const errorMsg = data?.error ?? "Failed to change password.";
-        setStatus(errorMsg);
-        toast.error(errorMsg);
+    changePasswordMutation.mutate(
+      { currentPassword, newPassword },
+      {
+        onSuccess: () => {
+          toast.success("Password changed successfully!");
+          setCurrentPassword("");
+          setNewPassword("");
+          setConfirmPassword("");
+          router.refresh();
+        },
+        onError: (err) => {
+          toast.error(err instanceof Error ? err.message : "Failed to change password.");
+        }
       }
-    } catch {
-      const errorMsg = "An unexpected error occurred. Please try again.";
-      setStatus(errorMsg);
-      toast.error(errorMsg);
-    } finally {
-      setLoading(false);
-    }
+    );
   }
 
   const roleStyles: Record<string, string> = {
@@ -88,7 +69,7 @@ export function ChangePasswordForm({ user }: ChangePasswordFormProps) {
   const roleClass = roleStyles[currentRole] || roleStyles.ADMIN;
 
   const formattedDate = new Intl.DateTimeFormat("en", {
-    dateStyle: "medium",
+    dateStyle: "medium"
   }).format(new Date(user.createdAt));
 
   return (
@@ -102,7 +83,7 @@ export function ChangePasswordForm({ user }: ChangePasswordFormProps) {
           <h2 className="text-lg font-bold text-text-primary">{user.name}</h2>
           <p className="text-xs text-text-muted">{user.email}</p>
         </div>
-        
+
         <div className="w-full pt-4 border-t border-border/80 space-y-3 text-left text-xs">
           <div className="flex justify-between items-center">
             <span className="text-text-muted font-medium">Role</span>
@@ -141,8 +122,7 @@ export function ChangePasswordForm({ user }: ChangePasswordFormProps) {
           <div className="space-y-1">
             <label
               htmlFor="currentPassword"
-              className="block text-sm font-semibold text-text-primary"
-            >
+              className="block text-sm font-semibold text-text-primary">
               Current Password
             </label>
             <div className="relative">
@@ -159,8 +139,7 @@ export function ChangePasswordForm({ user }: ChangePasswordFormProps) {
                 type="button"
                 onClick={() => setShowCurrent(!showCurrent)}
                 className="absolute inset-y-0 right-0 flex items-center pr-3 text-text-muted hover:text-text-primary cursor-pointer"
-                title={showCurrent ? "Hide password" : "Show password"}
-              >
+                title={showCurrent ? "Hide password" : "Show password"}>
                 {showCurrent ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
             </div>
@@ -170,8 +149,7 @@ export function ChangePasswordForm({ user }: ChangePasswordFormProps) {
           <div className="space-y-1">
             <label
               htmlFor="newPassword"
-              className="block text-sm font-semibold text-text-primary"
-            >
+              className="block text-sm font-semibold text-text-primary">
               New Password
             </label>
             <div className="relative">
@@ -188,8 +166,7 @@ export function ChangePasswordForm({ user }: ChangePasswordFormProps) {
                 type="button"
                 onClick={() => setShowNew(!showNew)}
                 className="absolute inset-y-0 right-0 flex items-center pr-3 text-text-muted hover:text-text-primary cursor-pointer"
-                title={showNew ? "Hide password" : "Show password"}
-              >
+                title={showNew ? "Hide password" : "Show password"}>
                 {showNew ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
             </div>
@@ -199,8 +176,7 @@ export function ChangePasswordForm({ user }: ChangePasswordFormProps) {
           <div className="space-y-1">
             <label
               htmlFor="confirmPassword"
-              className="block text-sm font-semibold text-text-primary"
-            >
+              className="block text-sm font-semibold text-text-primary">
               Confirm New Password
             </label>
             <div className="relative">
@@ -217,8 +193,7 @@ export function ChangePasswordForm({ user }: ChangePasswordFormProps) {
                 type="button"
                 onClick={() => setShowConfirm(!showConfirm)}
                 className="absolute inset-y-0 right-0 flex items-center pr-3 text-text-muted hover:text-text-primary cursor-pointer"
-                title={showConfirm ? "Hide password" : "Show password"}
-              >
+                title={showConfirm ? "Hide password" : "Show password"}>
                 {showConfirm ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
             </div>
@@ -235,7 +210,7 @@ export function ChangePasswordForm({ user }: ChangePasswordFormProps) {
                   <X size={14} className="text-text-muted/60" />
                 )}
                 <span className={hasMinLength ? "text-emerald-600 dark:text-emerald-400 font-medium" : "text-text-secondary"}>
-                  At least 8 characters long
+                  At least 6 characters long
                 </span>
               </div>
               <div className="flex items-center gap-2 text-xs">
@@ -251,14 +226,13 @@ export function ChangePasswordForm({ user }: ChangePasswordFormProps) {
             </div>
           </div>
 
-          {/* Submit button & response status */}
+          {/* Submit button */}
           <div className="pt-3 border-t border-border flex items-center gap-4 flex-wrap">
             <button
               type="submit"
-              disabled={loading || !isFormValid}
-              className="inline-flex items-center gap-2 rounded-md bg-accent px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:opacity-90 disabled:opacity-50 transition cursor-pointer"
-            >
-              {loading ? (
+              disabled={changePasswordMutation.isPending || !isFormValid}
+              className="inline-flex items-center gap-2 rounded-md bg-accent px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:opacity-90 disabled:opacity-50 transition cursor-pointer">
+              {changePasswordMutation.isPending ? (
                 <>
                   <span className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                   Updating...
@@ -270,18 +244,6 @@ export function ChangePasswordForm({ user }: ChangePasswordFormProps) {
                 </>
               )}
             </button>
-
-            {status && status !== "success" && (
-              <p className="text-xs font-semibold text-red-500">
-                {status}
-              </p>
-            )}
-
-            {status === "success" && (
-              <p className="text-xs font-semibold text-green-600 dark:text-green-400">
-                Password changed successfully!
-              </p>
-            )}
           </div>
         </form>
       </div>

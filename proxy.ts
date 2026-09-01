@@ -78,10 +78,16 @@ const authMiddleware = withAuth(
     callbacks: {
       authorized: ({ token, req }) => {
         const pathname = req.nextUrl.pathname;
-        if (pathname.startsWith("/admin/dashboard/users")) {
+        if (
+          pathname.startsWith("/admin/dashboard/users") ||
+          pathname.startsWith("/api/admin/users")
+        ) {
           return token?.role === "SUPER_ADMIN";
         }
-        if (pathname.startsWith("/admin/dashboard")) {
+        if (
+          pathname.startsWith("/admin/dashboard") ||
+          pathname.startsWith("/api/admin")
+        ) {
           return (
             token?.role === "SUPER_ADMIN" ||
             token?.role === "ADMIN" ||

@@ -2,8 +2,10 @@
 
 import { ImagePlus, Loader2, Trash2, UploadCloud, X } from "lucide-react";
 import { ChangeEvent, DragEvent, FormEvent, useRef, useState } from "react";
+import { toast } from "sonner";
 
 import { CloudinaryImage } from "@/components/shared/cloudinary-image";
+import { useUploadMedia } from "@/hooks/useMedia";
 
 type MediaUploaderProps = {
   propertyId: string;
@@ -39,15 +41,15 @@ export function MediaUploader({ propertyId }: MediaUploaderProps) {
   const [staged, setStaged] = useState<StagedMedia[]>([]);
   const [status, setStatus] = useState("");
   const [isDragging, setIsDragging] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
-
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+
+  const uploadMediaMutation = useUploadMedia();
 
   const handleDragStart = (index: number) => {
     setDraggedIndex(index);
   };
 
-  const handleDragOver = (e: DragEvent<HTMLDivElement>, index: number) => {
+  const handleDragOver = (e: DragEvent<HTMLDivElement>) => {
     e.preventDefault();
   };
 
@@ -67,7 +69,9 @@ export function MediaUploader({ propertyId }: MediaUploaderProps) {
   const heroPreview = staged[0];
 
   function stageFiles(files: FileList | File[]) {
-    const imageFiles = Array.from(files).filter((file) => file.type.startsWith("image/"));
+    const imageFiles = Array.from(files).filter((file) =>
+      file.type.startsWith("image/")
+    );
 
     if (!imageFiles.length) {
       setStatus("Choose at least one image file.");
@@ -78,11 +82,13 @@ export function MediaUploader({ propertyId }: MediaUploaderProps) {
       id: createId(),
       file,
       previewUrl: URL.createObjectURL(file),
-      altText: file.name.replace(/\.[^/.]+$/, "").replace(/[-_]+/g, " "),
+      altText: file.name.replace(/\.[^/.]+$/, "").replace(/[-_]+/g, " ")
     }));
 
     setStaged((current) => [...current, ...nextItems]);
-    setStatus(`${nextItems.length} image${nextItems.length === 1 ? "" : "s"} ready to upload.`);
+    setStatus(
+      `${nextItems.length} image${nextItems.length === 1 ? "" : "s"} ready to upload.`
+    );
   }
 
   function onFileChange(event: ChangeEvent<HTMLInputElement>) {
@@ -111,15 +117,20 @@ export function MediaUploader({ propertyId }: MediaUploaderProps) {
   }
 
   function updateAltText(id: string, value: string) {
-    setStaged((current) => current.map((item) => (item.id === id ? { ...item, altText: value } : item)));
+    setStaged((current) =>
+      current.map((item) =>
+        item.id === id ? { ...item, altText: value } : item
+      )
+    );
   }
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!staged.length || isUploading) return;
+    if (!staged.length || uploadMediaMutation.isPending) return;
 
-    setIsUploading(true);
-    setStatus(`Uploading ${staged.length} image${staged.length === 1 ? "" : "s"}...`);
+    setStatus(
+      `Uploading ${staged.length} image${staged.length === 1 ? "" : "s"}...`
+    );
 
     const completed: UploadedMedia[] = [];
 
@@ -130,60 +141,70 @@ export function MediaUploader({ propertyId }: MediaUploaderProps) {
       formData.append("altText", item.altText);
       formData.append("order", String(uploads.length + index));
 
-      const response = await fetch("/api/media/upload", {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!response.ok) {
-        const errorData = (await response.json().catch(() => null)) as { error?: string } | null;
-        setStatus(
-          `Upload failed on ${item.file.name}: ${errorData?.error ?? "The server could not process the image."}`
-        );
-        setIsUploading(false);
+      try {
+        const uploaded = await uploadMediaMutation.mutateAsync(formData);
+        completed.push({
+          id: uploaded.id,
+          url: uploaded.url,
+          thumbnailUrl: uploaded.thumbnailUrl || undefined
+        });
+        URL.revokeObjectURL(item.previewUrl);
+      } catch (err) {
+        const errMsg =
+          err instanceof Error
+            ? err.message
+            : "The server could not process the image.";
+        toast.error(`Upload failed on ${item.file.name}: ${errMsg}`);
+        setStatus(`Upload failed on ${item.file.name}: ${errMsg}`);
         setStaged(staged.slice(index));
         setUploads((current) => [...completed.reverse(), ...current]);
         return;
       }
-
-      const data = (await response.json()) as UploadedMedia;
-      completed.push(data);
-      URL.revokeObjectURL(item.previewUrl);
     }
 
     setUploads((current) => [...completed.reverse(), ...current]);
     setStaged([]);
-    setIsUploading(false);
+    toast.success("Media uploaded successfully.");
     setStatus("Media uploaded and attached to this property.");
   }
 
   return (
-    <form onSubmit={onSubmit} className="overflow-hidden rounded-lg border border-border bg-bg-secondary">
+    <form
+      onSubmit={onSubmit}
+      className="overflow-hidden rounded-lg border border-border bg-bg-secondary">
       <div className="border-b border-border p-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h2 className="text-lg font-semibold text-text-primary">Property media</h2>
-            <p className="text-sm text-text-muted">Preview images locally before spending an upload.</p>
+            <h2 className="text-lg font-semibold text-text-primary">
+              Property media
+            </h2>
+            <p className="text-sm text-text-muted">
+              Preview images locally before spending an upload.
+            </p>
           </div>
           <div className="flex flex-wrap gap-2">
             {staged.length ? (
               <button
                 type="button"
                 onClick={clearStaged}
-                disabled={isUploading}
-                className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm font-semibold text-text-secondary transition hover:border-red-400 hover:text-red-300 disabled:opacity-60"
-              >
+                disabled={uploadMediaMutation.isPending}
+                className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm font-semibold text-text-secondary transition hover:border-red-400 hover:text-red-300 disabled:opacity-60">
                 <X size={16} />
                 Clear
               </button>
             ) : null}
             <button
               type="submit"
-              disabled={!staged.length || isUploading}
-              className="inline-flex items-center gap-2 rounded-md bg-accent px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {isUploading ? <Loader2 size={16} className="animate-spin" /> : <UploadCloud size={16} />}
-              {isUploading ? "Uploading" : "Upload selected media"}
+              disabled={!staged.length || uploadMediaMutation.isPending}
+              className="inline-flex items-center gap-2 rounded-md bg-accent px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50">
+              {uploadMediaMutation.isPending ? (
+                <Loader2 size={16} className="animate-spin" />
+              ) : (
+                <UploadCloud size={16} />
+              )}
+              {uploadMediaMutation.isPending
+                ? "Uploading"
+                : "Upload selected media"}
             </button>
           </div>
         </div>
@@ -198,11 +219,19 @@ export function MediaUploader({ propertyId }: MediaUploaderProps) {
           onDragLeave={() => setIsDragging(false)}
           onDrop={onDrop}
           className={`relative flex min-h-80 cursor-pointer flex-col justify-end overflow-hidden rounded-lg border border-dashed transition ${
-            isDragging ? "border-accent bg-accent/10" : "border-border bg-bg-primary"
+            isDragging
+              ? "border-accent bg-accent/10"
+              : "border-border bg-bg-primary"
           }`}
-          onClick={() => inputRef.current?.click()}
-        >
-          <input ref={inputRef} type="file" accept="image/*" multiple onChange={onFileChange} className="sr-only" />
+          onClick={() => inputRef.current?.click()}>
+          <input
+            ref={inputRef}
+            type="file"
+            accept="image/*"
+            multiple
+            onChange={onFileChange}
+            className="sr-only"
+          />
           {heroPreview ? (
             <div
               className="absolute inset-0 bg-cover bg-center"
@@ -210,15 +239,23 @@ export function MediaUploader({ propertyId }: MediaUploaderProps) {
               aria-hidden="true"
             />
           ) : (
-            <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(57,75,209,0.18),rgba(8,12,32,0.96))]" aria-hidden="true" />
+            <div
+              className="absolute inset-0 bg-[linear-gradient(135deg,rgba(57,75,209,0.18),rgba(8,12,32,0.96))]"
+              aria-hidden="true"
+            />
           )}
-          <div className="absolute inset-0 bg-gradient-to-t from-bg-primary via-bg-primary/35 to-transparent" aria-hidden="true" />
+          <div
+            className="absolute inset-0 bg-linear-to-t from-bg-primary via-bg-primary/35 to-transparent"
+            aria-hidden="true"
+          />
           <div className="relative p-5">
             <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-lg border border-white/20 bg-white/10 text-white backdrop-blur">
               <ImagePlus size={24} />
             </div>
             <h3 className="text-xl font-semibold text-white">
-              {heroPreview ? heroPreview.file.name : "Drop property images here"}
+              {heroPreview
+                ? heroPreview.file.name
+                : "Drop property images here"}
             </h3>
             <p className="mt-1 max-w-xl text-sm text-white/75">
               {heroPreview
@@ -230,12 +267,13 @@ export function MediaUploader({ propertyId }: MediaUploaderProps) {
 
         <div className="space-y-3">
           <div className="flex items-center justify-between gap-3">
-            <p className="text-sm font-semibold text-text-primary">Selected previews (drag to reorder)</p>
+            <p className="text-sm font-semibold text-text-primary">
+              Selected previews (drag to reorder)
+            </p>
             <button
               type="button"
               onClick={() => inputRef.current?.click()}
-              className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm font-semibold text-text-secondary transition hover:border-accent hover:text-text-primary"
-            >
+              className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm font-semibold text-text-secondary transition hover:border-accent hover:text-text-primary">
               <ImagePlus size={16} />
               Add images
             </button>
@@ -248,50 +286,50 @@ export function MediaUploader({ propertyId }: MediaUploaderProps) {
                   key={item.id}
                   draggable
                   onDragStart={() => handleDragStart(index)}
-                  onDragOver={(e) => handleDragOver(e, index)}
+                  onDragOver={handleDragOver}
                   onDrop={(e) => handleDrop(e, index)}
-                  className="grid grid-cols-[88px_1fr_auto] gap-3 rounded-lg border border-border bg-bg-primary p-2 cursor-move select-none"
-                >
+                  className="grid grid-cols-[88px_1fr_auto] gap-3 rounded-lg border border-border bg-bg-primary p-2 cursor-move select-none">
                   <div
                     className="h-20 rounded-md bg-cover bg-center relative overflow-hidden"
                     style={{ backgroundImage: `url(${item.previewUrl})` }}
-                    aria-label={item.file.name}
-                  >
-                    {/* Position Badge */}
+                    aria-label={item.file.name}>
                     <div className="absolute top-1 left-1 h-5 w-5 rounded-full bg-black/70 text-white flex items-center justify-center text-[10px] font-bold">
                       {index + 1}
                     </div>
 
-                    {/* Cover label on position 1 */}
                     {index === 0 && (
                       <div
                         className="absolute bottom-1 left-1 right-1 bg-amber-500 text-white text-[9px] font-bold text-center py-0.5 rounded shadow-sm"
-                        title="This is the cover image shown in listing cards"
-                      >
+                        title="This is the cover image shown in listing cards">
                         ★ Cover
                       </div>
                     )}
                   </div>
                   <div className="min-w-0 space-y-2">
                     <div>
-                      <p className="truncate text-sm font-semibold text-text-primary">{index + 1}. {item.file.name}</p>
-                      <p className="text-xs text-text-muted">{formatFileSize(item.file.size)}</p>
+                      <p className="truncate text-sm font-semibold text-text-primary">
+                        {index + 1}. {item.file.name}
+                      </p>
+                      <p className="text-xs text-text-muted">
+                        {formatFileSize(item.file.size)}
+                      </p>
                     </div>
                     <input
                       value={item.altText}
-                      onChange={(event) => updateAltText(item.id, event.target.value)}
+                      onChange={(event) =>
+                        updateAltText(item.id, event.target.value)
+                      }
                       placeholder="Alt text"
                       className="w-full rounded-md border border-border bg-bg-secondary px-2 py-1.5 text-xs text-text-primary"
-                      onDragStart={(e) => e.stopPropagation()} // Prevent dragging input box
+                      onDragStart={(e) => e.stopPropagation()}
                     />
                   </div>
                   <button
                     type="button"
                     onClick={() => removeStaged(item.id)}
-                    disabled={isUploading}
+                    disabled={uploadMediaMutation.isPending}
                     title="Remove image"
-                    className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-border text-text-secondary transition hover:border-red-400 hover:text-red-300 disabled:opacity-60 cursor-pointer self-start"
-                  >
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-border text-text-secondary transition hover:border-red-400 hover:text-red-300 disabled:opacity-60 cursor-pointer self-start">
                     <Trash2 size={15} />
                   </button>
                 </div>
@@ -303,13 +341,17 @@ export function MediaUploader({ propertyId }: MediaUploaderProps) {
             </div>
           )}
 
-          {status ? <p className="text-sm text-text-secondary">{status}</p> : null}
+          {status ? (
+            <p className="text-sm text-text-secondary">{status}</p>
+          ) : null}
         </div>
       </div>
 
       {uploads.length ? (
         <div className="border-t border-border p-4">
-          <p className="mb-3 text-sm font-semibold text-text-primary">Uploaded this session</p>
+          <p className="mb-3 text-sm font-semibold text-text-primary">
+            Uploaded this session
+          </p>
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
             {uploads.map((item) => (
               <CloudinaryImage
@@ -318,7 +360,7 @@ export function MediaUploader({ propertyId }: MediaUploaderProps) {
                 alt="Uploaded media"
                 width={400}
                 height={300}
-                className="aspect-[4/3] rounded-md border border-border"
+                className="aspect-4/3 rounded-md border border-border"
               />
             ))}
           </div>

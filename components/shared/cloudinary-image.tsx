@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -72,19 +72,24 @@ export function CloudinaryImage({
     () => (src ? buildCloudinaryUrl(src, { width, height, ...transforms }) : fallbackSrc),
     [fallbackSrc, height, src, transforms, width]
   );
-  const [imgSrc, setImgSrc] = useState<string>(transformedSrc);
+
+  const [hasError, setHasError] = useState(false);
+  const [prevSrc, setPrevSrc] = useState(transformedSrc);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    setImgSrc(transformedSrc);
+  if (transformedSrc !== prevSrc) {
+    setPrevSrc(transformedSrc);
+    setHasError(false);
     setIsLoading(true);
-  }, [transformedSrc]);
+  }
+
+  const currentSrc = hasError ? fallbackSrc : transformedSrc;
 
   return (
     <div className={cn("relative overflow-hidden", className)}>
       {isLoading && <div className="absolute inset-0 animate-pulse bg-bg-secondary" aria-hidden="true" />}
       <Image
-        src={imgSrc}
+        src={currentSrc}
         alt={alt}
         width={width}
         height={height}
@@ -96,7 +101,7 @@ export function CloudinaryImage({
           onLoad?.();
         }}
         onError={() => {
-          setImgSrc(fallbackSrc);
+          setHasError(true);
           setIsLoading(false);
         }}
       />

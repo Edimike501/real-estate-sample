@@ -18,6 +18,8 @@ import {
 } from "./ListingTypeBadge";
 import PriceDisplay from "./PriceDisplay";
 
+import { useSubmitInquiry } from "@/hooks/useInquiries";
+
 type PropertyCardProps = {
   property: Property;
   priority?: boolean;
@@ -29,6 +31,7 @@ export function PropertyCard({
 }: PropertyCardProps) {
   const { currency, rates } = useCurrency();
   const { session } = useGuestSession();
+  const submitInquiryMutation = useSubmitInquiry();
   const firstImageMedia = property.media?.find(
     (item) => item.mediaType === MediaType.IMAGE
   );
@@ -178,18 +181,12 @@ export function PropertyCard({
             target="_blank"
             rel="noopener noreferrer"
             onClick={() => {
-              fetch("/api/inquiries", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  guestName: session?.name || "Guest",
-                  guestPhone: session?.phone || "0000000000",
-                  guestEmail: session?.email || undefined,
-                  propertyId: property.id,
-                  source: InquirySource.FEATURED_CARD
-                })
-              }).catch((err) => {
-                console.error("Error submitting property card inquiry:", err);
+              submitInquiryMutation.mutate({
+                guestName: session?.name || "Guest",
+                guestPhone: session?.phone || "0000000000",
+                guestEmail: session?.email || undefined,
+                propertyId: property.id,
+                source: InquirySource.FEATURED_CARD
               });
             }}
             className="inline-flex w-full items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-lg transition-all px-6 py-3 text-xs">

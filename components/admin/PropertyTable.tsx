@@ -4,12 +4,22 @@ import { Copy, Edit, Eye, Trash2 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 
 import { useDebounce } from "@/hooks/use-debounce.hooks";
+import {
+  useAdminProperties,
+  useDeleteProperty,
+  useDuplicateProperty,
+  useUpdateProperty
+} from "@/hooks/useProperties";
 import { formatEnum } from "@/lib/utils";
-import { type Property } from "@/types";
+import {
+  type Property,
+  type PropertyFilters,
+  type PropertyMedia
+} from "@/types";
 
 export function PropertyTable() {
   const router = useRouter();
@@ -18,28 +28,30 @@ export function PropertyTable() {
     searchParams.get("tab") === "archived" ? "archived" : "active";
 
   const [searchInput, setSearchInput] = useState("");
-  const [properties, setProperties] = useState<Property[]>([]);
-  const [duplicatingId, setDuplicatingId] = useState<string | null>(null);
-
   const debouncedSearch = useDebounce(searchInput, 400);
 
-  async function performDeleteProperty(property: Property) {
-    try {
-      const response = await fetch(`/api/properties/${property.id}`, {
-        method: "DELETE"
-      });
+  const { data, isLoading } = useAdminProperties({
+    search: debouncedSearch,
+    tab: currentTab
+  } as PropertyFilters & { tab?: string });
 
-      if (response.ok) {
-        setProperties((current) =>
-          current.filter((item) => item.id !== property.id)
-        );
+  const properties = data?.properties || [];
+
+  const deletePropertyMutation = useDeleteProperty();
+  const updatePropertyMutation = useUpdateProperty();
+  const duplicatePropertyMutation = useDuplicateProperty();
+
+  function performDeleteProperty(property: Property) {
+    deletePropertyMutation.mutate(property.id, {
+      onSuccess: () => {
         toast.success("Property archived successfully.");
-      } else {
-        toast.error("Failed to archive property.");
+      },
+      onError: (err) => {
+        toast.error(
+          err instanceof Error ? err.message : "Failed to archive property."
+        );
       }
-    } catch {
-      toast.error("Failed to archive property.");
-    }
+    });
   }
 
   function deleteProperty(property: Property) {
@@ -47,7 +59,7 @@ export function PropertyTable() {
       description: `Archive "${property.title}"?`,
       action: {
         label: "Archive",
-        onClick: () => void performDeleteProperty(property)
+        onClick: () => performDeleteProperty(property)
       },
       cancel: {
         label: "Cancel",
@@ -56,26 +68,20 @@ export function PropertyTable() {
     });
   }
 
-  async function performRestoreProperty(property: Property) {
-    try {
-      const response = await fetch(`/api/properties/${property.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ restore: true })
-      });
-
-      if (response.ok) {
-        setProperties((current) =>
-          current.filter((item) => item.id !== property.id)
-        );
-        toast.success("Property restored successfully.");
-      } else {
-        toast.error("Failed to restore property.");
+  function performRestoreProperty(property: Property) {
+    updatePropertyMutation.mutate(
+      { id: property.id, data: { deletedAt: null } as Partial<Property> },
+      {
+        onSuccess: () => {
+          toast.success("Property restored successfully.");
+        },
+        onError: (err) => {
+          toast.error(
+            err instanceof Error ? err.message : "Failed to restore property."
+          );
+        }
       }
-    } catch (err) {
-      console.error(err);
-      toast.error("An error occurred while restoring property.");
-    }
+    );
   }
 
   function restoreProperty(property: Property) {
@@ -83,7 +89,7 @@ export function PropertyTable() {
       description: `Restore "${property.title}"?`,
       action: {
         label: "Restore",
-        onClick: () => void performRestoreProperty(property)
+        onClick: () => performRestoreProperty(property)
       },
       cancel: {
         label: "Cancel",
@@ -92,40 +98,21 @@ export function PropertyTable() {
     });
   }
 
-  async function duplicateProperty(propertyId: string) {
-    setDuplicatingId(propertyId);
-    try {
-      const response = await fetch(`/api/properties/${propertyId}/duplicate`, {
-        method: "POST"
-      });
-      const data = await response.json();
-      if (response.ok && data.success && data.property) {
+  function handleDuplicate(propertyId: string) {
+    duplicatePropertyMutation.mutate(propertyId, {
+      onSuccess: (duplicated) => {
         toast.success(
           "Property duplicated. Review and update details before publishing."
         );
-        router.push(`/admin/dashboard/properties/${data.property.id}/edit`);
-      } else {
-        toast.error(data.error || "Failed to duplicate property.");
+        router.push(`/admin/dashboard/properties/${duplicated.id}/edit`);
+      },
+      onError: (err) => {
+        toast.error(
+          err instanceof Error ? err.message : "Failed to duplicate property."
+        );
       }
-    } catch (err) {
-      console.error(err);
-      toast.error("An error occurred while duplicating property.");
-    } finally {
-      setDuplicatingId(null);
-    }
+    });
   }
-
-  useEffect(() => {
-    const query = new URLSearchParams();
-    if (debouncedSearch) query.set("search", debouncedSearch);
-    query.set("tab", currentTab);
-
-    fetch(`/api/properties?${query.toString()}`)
-      .then((response) => (response.ok ? response.json() : null))
-      .then((data: { properties: Property[] } | null) => {
-        if (data) setProperties(data.properties);
-      });
-  }, [debouncedSearch, currentTab]);
 
   const handleTabChange = (tab: "active" | "archived") => {
     const params = new URLSearchParams(searchParams.toString());
@@ -139,7 +126,7 @@ export function PropertyTable() {
       <div className="flex border-b border-border">
         <button
           onClick={() => handleTabChange("active")}
-          className={`px-4 py-2 text-sm font-semibold border-b-2 cursor-pointer transition-colors mb-[-2px] ${
+          className={`px-4 py-2 text-sm font-semibold border-b-2 cursor-pointer transition-colors -mb-0.5 ${
             currentTab === "active"
               ? "border-accent text-accent"
               : "border-transparent text-text-muted hover:text-text-primary"
@@ -148,7 +135,7 @@ export function PropertyTable() {
         </button>
         <button
           onClick={() => handleTabChange("archived")}
-          className={`px-4 py-2 text-sm font-semibold border-b-2 cursor-pointer transition-colors mb-[-2px] ${
+          className={`px-4 py-2 text-sm font-semibold border-b-2 cursor-pointer transition-colors -mb-0.5 ${
             currentTab === "archived"
               ? "border-accent text-accent"
               : "border-transparent text-text-muted hover:text-text-primary"
@@ -167,7 +154,7 @@ export function PropertyTable() {
       </div>
 
       <div className="w-full overflow-x-auto rounded-md border border-border/80 bg-bg-primary">
-        <table className="min-w-[800px] w-full text-sm border-collapse">
+        <table className="min-w-200 w-full text-sm border-collapse">
           <thead>
             <tr className="text-left text-text-muted bg-bg-secondary/40 border-b border-border/60">
               <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider text-text-muted whitespace-nowrap">
@@ -194,8 +181,16 @@ export function PropertyTable() {
             </tr>
           </thead>
           <tbody className="divide-y divide-border/80">
-            {properties.length > 0 ? (
-              properties.map((property) => (
+            {isLoading ? (
+              <tr>
+                <td
+                  colSpan={7}
+                  className="px-4 py-8 text-center text-text-muted">
+                  Loading properties...
+                </td>
+              </tr>
+            ) : properties.length > 0 ? (
+              properties.map((property: Property) => (
                 <tr
                   key={property.id}
                   className={`hover:bg-bg-secondary/15 transition-colors ${
@@ -204,7 +199,7 @@ export function PropertyTable() {
                   <td className="px-4 py-3.5 whitespace-nowrap">
                     {(() => {
                       const firstImage = property.media?.find(
-                        (m) => m.mediaType === "IMAGE"
+                        (m: PropertyMedia) => m.mediaType === "IMAGE"
                       );
                       const src =
                         firstImage?.thumbnailUrl ??
@@ -276,7 +271,7 @@ export function PropertyTable() {
                         <button
                           type="button"
                           title="Restore property"
-                          onClick={() => void restoreProperty(property)}
+                          onClick={() => restoreProperty(property)}
                           className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md border border-accent text-accent text-xs font-semibold hover:bg-accent/5 transition cursor-pointer">
                           Restore
                         </button>
@@ -297,15 +292,15 @@ export function PropertyTable() {
                           <button
                             type="button"
                             title="Duplicate property"
-                            disabled={duplicatingId === property.id}
-                            onClick={() => void duplicateProperty(property.id)}
+                            disabled={duplicatePropertyMutation.isPending}
+                            onClick={() => handleDuplicate(property.id)}
                             className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-border text-text-secondary transition hover:border-accent hover:text-text-primary bg-bg-primary cursor-pointer disabled:opacity-50">
                             <Copy size={15} />
                           </button>
                           <button
                             type="button"
                             title="Archive property"
-                            onClick={() => void deleteProperty(property)}
+                            onClick={() => deleteProperty(property)}
                             className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-border text-text-secondary transition hover:border-red-400 hover:text-red-500 bg-bg-primary cursor-pointer">
                             <Trash2 size={15} />
                           </button>

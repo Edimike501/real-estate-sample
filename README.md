@@ -31,7 +31,7 @@ Anyone reviewing this portfolio showcase can log into the management console to 
 ### 🛡️ Management Dashboard Portal
 - **Analytics Overview**: High-level metrics for active listings, total inquiries, featured properties, and quick management links.
 - **Property Lifecycle CRUD**: Create, edit, feature, pin, or delete property listings with automated slug generation and coordinate lookup.
-- **Media Asset Processing**: Local fallback upload handler + Cloudinary integration for property image galleries and virtual tour videos.
+- **Media Asset Processing**: Local upload handler + Cloudinary integration for property image galleries and virtual tour videos.
 - **Inquiry Management Hub**: Track customer inquiries, review message details, mark status, and follow up directly.
 - **Role-Based Access Control (RBAC)**: Enforced via NextAuth JWT sessions and middleware proxies for Super Admin, Admin, and Viewer roles.
 - **SEO & Indexing Control**: Built-in sitemap generation, structured JSON-LD data, robots.txt, and IndexNow search engine ping integration.
@@ -40,10 +40,11 @@ Anyone reviewing this portfolio showcase can log into the management console to 
 
 ## 🏗️ Architecture & Tech Stack
 
-- **Framework**: [Next.js 16+](https://nextjs.org/) (App Router, Server Components & Actions)
+- **Framework**: [Next.js 16+](https://nextjs.org/) (App Router, Server Components & Actions with Turbopack)
 - **Language**: [TypeScript](https://www.typescriptlang.org/) (Strict Mode)
 - **Styling**: [Tailwind CSS v4](https://tailwindcss.com/) + CSS Variables (`app/globals.css`)
-- **Database & ORM**: [Prisma ORM](https://www.prisma.io/) (SQLite default for zero-config local setup; compatible with PostgreSQL / MySQL)
+- **Database & ORM**: [Prisma ORM](https://www.prisma.io/) with **PostgreSQL** database engine (for both local development and production)
+- **Secret Management**: [Doppler](https://www.doppler.com/) CLI integration for environment secret injection
 - **Authentication**: [NextAuth.js](https://next-auth.js.org/) (Credentials Provider with JWT Strategy)
 - **UI Components & Icons**: [Lucide React](https://lucide.dev/), [Framer Motion](https://www.framer.com/motion/), [Sonner](https://sonner.emilkowal.si/)
 - **Media & Geocoding**: Cloudinary API, Nominatim OpenStreetMap Proxy
@@ -57,24 +58,32 @@ Anyone reviewing this portfolio showcase can log into the management console to 
 pnpm install
 ```
 
-### 2. Configure Environment Variables
-Copy `.env.example` (or create a `.env` file in the root directory):
+### 2. Configure Environment Variables / Doppler
+Set up your PostgreSQL database connection URL in `.env` (or via Doppler secret manager):
 ```env
-DATABASE_URL="file:./dev.db"
-NEXTAUTH_SECRET="portfolio-demo-secret-key-2026"
+DATABASE_URL="postgresql://postgres:password@localhost:5432/aura_real_estate_db"
+NEXTAUTH_SECRET="aura-luxury-portfolio-secret-key-2026"
 NEXTAUTH_URL="http://localhost:3000"
 NEXT_PUBLIC_APP_URL="http://localhost:3000"
 NEXT_PUBLIC_WHATSAPP_NUMBER="+2347000000000"
 ```
 
-### 3. Initialize & Seed Database
-Run Prisma migrations and populate the database with demo listings and admin credentials:
+If using **Doppler**:
 ```bash
-# Push database schema
-npx prisma db push
+# Link project configuration
+doppler setup
+
+# Environment secrets are automatically injected into pnpm dev, pnpm build, and pnpm prisma:* commands
+```
+
+### 3. Initialize & Seed Database
+Sync the Prisma schema to PostgreSQL and seed initial records (Super Admin user, luxury properties with media and video tours):
+```bash
+# Push database schema to PostgreSQL
+pnpm prisma:push
 
 # Seed demo users & sample properties
-npx tsx prisma/seed.ts
+pnpm prisma:seed
 ```
 
 ### 4. Run Development Server
@@ -91,37 +100,33 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 ├── app/
 │   ├── (site)/                 # Public pages (Home, Properties, Contact)
 │   ├── admin/                  # Admin dashboard & login routes
-│   ├── api/                    # API endpoints (Auth, Properties, Inquiries, Rates)
+│   ├── api/                    # API endpoints (Auth, Admin, Properties, Inquiries, Media)
 │   ├── globals.css             # Theme tokens (Emerald Green luxury palette)
 │   └── layout.tsx              # Root layout + Providers + JSON-LD
 │
 ├── components/
-│   ├── admin/                  # Dashboard tables, forms, management UI
+│   ├── admin/                  # Dashboard tables, forms, sidebar, management UI
 │   ├── layout/                 # Navbar, Footer, Navigation
 │   ├── property/               # Cards, grids, filters, maps, detail views
 │   ├── sections/               # Homepage hero, services, packages, testimonials
 │   └── ui/                     # Reusable buttons, modals, logo, toasts
 │
 ├── context/                    # Currency & Bookmarks React Contexts
-├── hooks/                      # Custom hooks (currency rates, media, search)
+├── hooks/                      # Custom hooks (React Query, currency rates, media, search)
 ├── lib/                        # Prisma client, auth config, email, whatsapp, permissions
 ├── metadata/                   # Site config & property fallback listings
-├── prisma/                     # Database schema & seed scripts
-└── public/                     # Static images, OG graphics, logo icon
+├── prisma/                     # PostgreSQL database schema & seed scripts
+└── public/                     # Static images, OG graphics, property media assets
 ```
 
 ---
 
 ## 🔐 Deployment & Environment Notes
 
-- **Zero External Dependency Mode**: Out of the box, the app runs entirely locally using SQLite and mock upload fallbacks if Resend or Cloudinary API keys are not provided.
-- **Production Deployment**: To deploy to Vercel, set `DATABASE_URL` (e.g. Supabase PostgreSQL or PlanetScale MySQL), update `NEXTAUTH_SECRET`, and deploy.
+- **PostgreSQL Database Engine**: The application requires a PostgreSQL database instance for both local development and production environments (e.g. local PostgreSQL, Supabase, Neon, or Railway).
+- **Doppler Integration**: Secrets can be managed centrally using Doppler CLI (`doppler run --`), which automatically injects environment variables during `pnpm dev`, `pnpm build`, and Prisma commands.
+- **Production Deployment**: To deploy to Vercel or Netlify, supply the PostgreSQL `DATABASE_URL` connection string and `NEXTAUTH_SECRET` environment variables.
 
 ---
 
-© 2026 **Aura Luxury Properties** — Full-Stack Portfolio Display Project.ient/designer updates `metadata/site.ts` and deploys
-- Zero developer involvement for content updates
-
----
-
-**Production-grade scaffold ready for real client deployment.**
+© 2026 **Aura Luxury Properties** — Full-Stack Portfolio Display Project.

@@ -70,7 +70,7 @@ export function Sidebar({ user }: SidebarProps) {
   return (
     <>
       {/* 1. Desktop Persistent Sidebar */}
-      <aside className="hidden lg:flex lg:h-[calc(100vh-3rem)] lg:w-64 lg:shrink-0 lg:flex-col bg-bg-secondary border border-border rounded-lg p-5 justify-between sticky top-6 overflow-hidden">
+      <aside className="hidden lg:flex lg:h-full lg:w-64 lg:shrink-0 lg:flex-col bg-bg-secondary border-r border-border p-5 justify-between overflow-y-auto">
         <div className="space-y-6">
           <div className="pb-4 border-b border-border/80">
             <Logo href="/admin/dashboard" showText={true} width={36} height={36} />

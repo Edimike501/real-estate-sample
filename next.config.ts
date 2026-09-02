@@ -1,3 +1,4 @@
+import path from "path";
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
@@ -34,6 +35,9 @@ const nextConfig: NextConfig = {
       }
     ];
   }, */
+  turbopack: {
+    root: path.resolve(__dirname)
+  },
   poweredByHeader: false, // Enforces consistent URL patterns, eliminating the automatic 308 redirect mismatch
   trailingSlash: false,
   images: {
@@ -41,6 +45,10 @@ const nextConfig: NextConfig = {
       {
         protocol: "https",
         hostname: "res.cloudinary.com"
+      },
+      {
+        protocol: "https",
+        hostname: "images.unsplash.com"
       }
     ]
   }

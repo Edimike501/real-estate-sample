@@ -3,14 +3,14 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
+    "dev": "doppler run -- next dev",
+    "build": "doppler run -- next build",
+    "start": "doppler run -- next start",
     "lint": "eslint",
     "postinstall": "prisma generate",
     "prisma:generate": "prisma generate",
-    "prisma:push": "prisma db push",
-    "prisma:seed": "prisma db seed"
+    "prisma:push": "doppler run -- prisma db push",
+    "prisma:seed": "doppler run -- prisma db seed"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.4.0",

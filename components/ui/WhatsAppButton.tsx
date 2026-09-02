@@ -2,6 +2,7 @@
 
 import { MessageCircle } from "lucide-react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 import { useGuestSession } from "@/hooks/useGuestSession";
 import { useSubmitInquiry } from "@/hooks/useInquiries";
@@ -23,9 +24,14 @@ export default function WhatsAppButton({
   label = "Chat on WhatsApp",
   className = ""
 }: WhatsAppButtonProps) {
+  const pathname = usePathname();
   const whatsappUrl = generateWhatsAppUrl(phoneNumber, message);
   const { session } = useGuestSession();
   const submitInquiryMutation = useSubmitInquiry();
+
+  if (variant === "floating" && pathname?.startsWith("/admin")) {
+    return null;
+  }
 
   const handleClick = () => {
     const source = variant === "floating" ? InquirySource.WHATSAPP_FLOAT : InquirySource.CONTACT_FORM;

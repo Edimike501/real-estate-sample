@@ -154,7 +154,7 @@ export function PropertyTable() {
       </div>
 
       <div className="w-full overflow-x-auto rounded-md border border-border/80 bg-bg-primary">
-        <table className="min-w-200 w-full text-sm border-collapse">
+        <table className="min-w-187.5 w-full text-sm border-collapse">
           <thead>
             <tr className="text-left text-text-muted bg-bg-secondary/40 border-b border-border/60">
               <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider text-text-muted whitespace-nowrap">

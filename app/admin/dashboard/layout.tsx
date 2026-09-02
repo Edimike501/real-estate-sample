@@ -12,11 +12,13 @@ export default async function AdminDashboardLayout({ children }: { children: Rea
   }
 
   return (
-    <main className="min-h-screen bg-bg-primary p-4 lg:p-6">
-      <div className="mx-auto flex max-w-7xl flex-col gap-4 lg:flex-row lg:items-start">
-        <Sidebar user={session?.user} />
-        <section className="flex-1">{children}</section>
-      </div>
-    </main>
+    <div className="fixed inset-0 flex w-full h-full overflow-hidden bg-bg-primary">
+      <Sidebar user={session?.user} />
+      <main className="flex-1 min-w-0 h-full overflow-y-auto overflow-x-hidden p-4 lg:p-6">
+        <div className="mx-auto max-w-7xl w-full min-w-0">
+          {children}
+        </div>
+      </main>
+    </div>
   );
 }

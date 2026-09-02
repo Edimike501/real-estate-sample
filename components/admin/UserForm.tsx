@@ -1,10 +1,11 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { FormEvent, useState } from "react";
+import { FormEvent } from "react";
 import { toast } from "sonner";
 
 import { AppSelect } from "@/components/ui/app-select";
+import { useCreateUser, useUpdateUser } from "@/hooks/useUsers";
 import { formatEnum } from "@/lib/utils";
 import { type User } from "@/types";
 import { UserRole } from "@/types/enums";
@@ -15,63 +16,49 @@ type UserFormProps = {
 
 export function UserForm({ user }: UserFormProps) {
   const router = useRouter();
-  const [status, setStatus] = useState("");
-  const [loading, setLoading] = useState(false);
   const isEditing = Boolean(user);
 
-  async function onSubmit(event: FormEvent<HTMLFormElement>) {
+  const createUserMutation = useCreateUser();
+  const updateUserMutation = useUpdateUser();
+
+  const isPending = createUserMutation.isPending || updateUserMutation.isPending;
+
+  function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setLoading(true);
-    setStatus("");
 
     const formData = new FormData(event.currentTarget);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const payload: Record<string, any> = {
-      name: String(formData.get("name") ?? ""),
-      email: String(formData.get("email") ?? ""),
-      role: String(formData.get("role") ?? "")
-    };
+    const name = String(formData.get("name") ?? "");
+    const email = String(formData.get("email") ?? "");
+    const role = String(formData.get("role") ?? "");
 
-    if (isEditing) {
-      payload.isActive = formData.get("isActive") === "on";
-    } else {
-      payload.password = String(formData.get("password") ?? "");
-    }
-
-    try {
-      const response = await fetch(
-        isEditing ? `/api/users/${user?.id}` : "/api/users",
+    if (isEditing && user) {
+      const isActive = formData.get("isActive") === "on";
+      updateUserMutation.mutate(
+        { id: user.id, data: { name, role, isActive } },
         {
-          method: isEditing ? "PATCH" : "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload)
+          onSuccess: () => {
+            toast.success("User saved successfully.");
+            router.push(`/admin/dashboard/users/${user.id}`);
+          },
+          onError: (err) => {
+            toast.error(err instanceof Error ? err.message : "Failed to save user.");
+          }
         }
       );
-
-      const data = await response.json().catch(() => null);
-
-      if (response.ok) {
-        const successMsg = isEditing ? "User saved successfully." : "User created successfully.";
-        setStatus(successMsg);
-        toast.success(successMsg);
-        if (isEditing) {
-          router.push(`/admin/dashboard/users/${user?.id}`);
-        } else {
-          router.push(`/admin/dashboard/users`);
+    } else {
+      const password = String(formData.get("password") ?? "");
+      createUserMutation.mutate(
+        { name, email, password, role },
+        {
+          onSuccess: () => {
+            toast.success("User created successfully.");
+            router.push("/admin/dashboard/users");
+          },
+          onError: (err) => {
+            toast.error(err instanceof Error ? err.message : "Failed to create user.");
+          }
         }
-        router.refresh();
-        return;
-      }
-
-      const errorMsg = data?.error ?? `Failed to ${isEditing ? "save" : "create"} user.`;
-      setStatus(errorMsg);
-      toast.error(errorMsg);
-    } catch (e) {
-      const errorMsg = "An unexpected error occurred. Please try again.";
-      setStatus(errorMsg);
-      toast.error(errorMsg);
-    } finally {
-      setLoading(false);
+      );
     }
   }
 
@@ -108,7 +95,8 @@ export function UserForm({ user }: UserFormProps) {
           defaultValue={user?.email}
           placeholder="e.g. admin@opololuxuries.com"
           required
-          className="w-full rounded-md border border-border bg-bg-primary px-3 py-2.5 text-sm text-text-primary focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent/40"
+          disabled={isEditing}
+          className={`w-full rounded-md border border-border bg-bg-primary px-3 py-2.5 text-sm text-text-primary focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent/40 ${isEditing ? "opacity-60 cursor-not-allowed" : ""}`}
         />
       </div>
 
@@ -125,11 +113,11 @@ export function UserForm({ user }: UserFormProps) {
             type="password"
             placeholder="••••••••"
             required
-            minLength={8}
+            minLength={6}
             className="w-full rounded-md border border-border bg-bg-primary px-3 py-2.5 text-sm text-text-primary focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent/40"
           />
           <p className="text-xs text-text-muted mt-1">
-            Must be at least 8 characters long.
+            Must be at least 6 characters long.
           </p>
         </div>
       )}
@@ -176,17 +164,10 @@ export function UserForm({ user }: UserFormProps) {
       <div className="pt-3 border-t border-border flex items-center justify-between gap-4 flex-wrap">
         <button
           type="submit"
-          disabled={loading}
+          disabled={isPending}
           className="rounded-md bg-accent px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:opacity-90 disabled:opacity-50 transition cursor-pointer">
-          {loading ? "Saving..." : isEditing ? "Save User" : "Create User"}
+          {isPending ? "Saving..." : isEditing ? "Save User" : "Create User"}
         </button>
-
-        {status ? (
-          <p
-            className={`text-xs font-semibold ${status.includes("successfully") ? "text-green-600 dark:text-green-400" : "text-red-500"}`}>
-            {status}
-          </p>
-        ) : null}
       </div>
     </form>
   );

@@ -21,7 +21,7 @@ export async function POST(
     }
 
     // Generate unique slug
-    let baseSlug = `${original.slug}-copy`;
+    const baseSlug = `${original.slug}-copy`;
     let uniqueSlug = baseSlug;
     let counter = 1;
     while (true) {

@@ -2,10 +2,11 @@
 
 import { FileText, Mail, MessageSquare, Phone, Save, User } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { FormEvent, useState } from "react";
+import { FormEvent } from "react";
 import { toast } from "sonner";
 
 import { AppSelect } from "@/components/ui/app-select";
+import { useUpdateInquiryStatus } from "@/hooks/useInquiries";
 import { type Inquiry } from "@/types";
 import { InquiryStatus } from "@/types/enums";
 
@@ -15,38 +16,31 @@ type InquiryEditFormProps = {
 
 export function InquiryEditForm({ inquiry }: InquiryEditFormProps) {
   const router = useRouter();
-  const [status, setStatus] = useState("");
-  const [loading, setLoading] = useState(false);
+  const updateStatusMutation = useUpdateInquiryStatus();
 
-  async function onSubmit(event: FormEvent<HTMLFormElement>) {
+  function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setLoading(true);
-    setStatus("");
 
     const formData = new FormData(event.currentTarget);
-    const payload = {
-      status: String(formData.get("status") ?? ""),
-      adminNotes: String(formData.get("adminNotes") ?? "") || undefined
-    };
+    const statusVal = String(formData.get("status") ?? inquiry.status);
+    const adminNotesVal = String(formData.get("adminNotes") ?? "") || undefined;
 
-    const response = await fetch(`/api/inquiries/${inquiry.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
-
-    if (response.ok) {
-      toast.success("Inquiry saved successfully.");
-      setStatus("Inquiry saved successfully.");
-      router.push(`/admin/dashboard/inquiries/${inquiry.id}`);
-      router.refresh();
-      setLoading(false);
-      return;
-    }
-
-    toast.error("Failed to save inquiry.");
-    setStatus("Failed to save inquiry.");
-    setLoading(false);
+    updateStatusMutation.mutate(
+      {
+        id: inquiry.id,
+        status: statusVal,
+        adminNotes: adminNotesVal
+      },
+      {
+        onSuccess: () => {
+          toast.success("Inquiry saved successfully.");
+          router.push(`/admin/dashboard/inquiries/${inquiry.id}`);
+        },
+        onError: (err) => {
+          toast.error(err instanceof Error ? err.message : "Failed to save inquiry.");
+        }
+      }
+    );
   }
 
   return (
@@ -200,17 +194,11 @@ export function InquiryEditForm({ inquiry }: InquiryEditFormProps) {
       <div className="pt-3 border-t border-border flex items-center gap-4 flex-wrap">
         <button
           type="submit"
-          disabled={loading}
+          disabled={updateStatusMutation.isPending}
           className="inline-flex items-center gap-2 rounded-md bg-accent px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:opacity-90 disabled:opacity-50 transition cursor-pointer">
           <Save size={16} />
-          {loading ? "Saving..." : "Save Inquiry"}
+          {updateStatusMutation.isPending ? "Saving..." : "Save Inquiry"}
         </button>
-        {status ? (
-          <p
-            className={`text-xs font-semibold ${status.includes("successfully") ? "text-green-600 dark:text-green-400" : "text-red-500"}`}>
-            {status}
-          </p>
-        ) : null}
       </div>
     </form>
   );

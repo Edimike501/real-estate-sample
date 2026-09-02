@@ -1,17 +1,19 @@
 "use client";
 
-import { Play, Video, X, ChevronLeft, ChevronRight } from "lucide-react";
-import { useState, useEffect, useCallback } from "react";
-import useEmblaCarousel, { type UseEmblaCarouselType } from "embla-carousel-react";
+import useEmblaCarousel, {
+  type UseEmblaCarouselType
+} from "embla-carousel-react";
+import { ChevronLeft, ChevronRight, Play, Video, X } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
 
 import { CloudinaryImage } from "@/components/shared/cloudinary-image";
 import { type Property, type PropertyMedia } from "@/types";
 import { MediaType } from "@/types/enums";
 
-import { ListingTypeBadge } from "./ListingTypeBadge";
 import { useCurrency } from "@/context/CurrencyContext";
 import { timeAgo } from "@/lib/timeAgo";
 import CurrencyToggle from "./CurrencyToggle";
+import { ListingTypeBadge } from "./ListingTypeBadge";
 import PriceDisplay from "./PriceDisplay";
 
 type PropertyDetailHeroProps = {
@@ -33,7 +35,7 @@ function getMediaLabel(media?: PropertyMedia) {
 export function PropertyDetailHero({ property }: PropertyDetailHeroProps) {
   const { currency, setCurrency, rates, lastUpdated } = useCurrency();
   const media = property.media ?? [];
-  
+
   // Carousel state
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true });
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -41,9 +43,18 @@ export function PropertyDetailHero({ property }: PropertyDetailHeroProps) {
 
   // Lightbox state
   const [lightboxOpen, setLightboxOpen] = useState(false);
-  const [lightboxRef, lightboxApi] = useEmblaCarousel({ loop: true, startIndex: selectedIndex });
+  const [lightboxRef, lightboxApi] = useEmblaCarousel({
+    loop: true,
+    startIndex: selectedIndex
+  });
 
-  // Update selected index on select
+  // Update selected index & snaps on embla events
+  const onInit = useCallback((api: UseEmblaCarouselType[1]) => {
+    if (!api) return;
+    setScrollSnaps(api.scrollSnapList());
+    setSelectedIndex(api.selectedScrollSnap());
+  }, []);
+
   const onSelect = useCallback((api: UseEmblaCarouselType[1]) => {
     if (!api) return;
     setSelectedIndex(api.selectedScrollSnap());
@@ -51,17 +62,27 @@ export function PropertyDetailHero({ property }: PropertyDetailHeroProps) {
 
   useEffect(() => {
     if (!emblaApi) return;
-    onSelect(emblaApi);
-    setScrollSnaps(emblaApi.scrollSnapList());
+
     emblaApi.on("select", onSelect);
-    emblaApi.on("reInit", onSelect);
-  }, [emblaApi, onSelect]);
+    emblaApi.on("reInit", onInit);
+
+    emblaApi.reInit();
+
+    return () => {
+      emblaApi.off("select", onSelect);
+      emblaApi.off("reInit", onInit);
+    };
+  }, [emblaApi, onInit, onSelect]);
 
   useEffect(() => {
     if (!lightboxApi) return;
-    lightboxApi.on("select", () => {
+    const handleLightboxSelect = () => {
       setSelectedIndex(lightboxApi.selectedScrollSnap());
-    });
+    };
+    lightboxApi.on("select", handleLightboxSelect);
+    return () => {
+      lightboxApi.off("select", handleLightboxSelect);
+    };
   }, [lightboxApi]);
 
   // Sync index if lightbox is opened
@@ -86,18 +107,35 @@ export function PropertyDetailHero({ property }: PropertyDetailHeroProps) {
     };
   }, [lightboxOpen]);
 
-  const scrollPrev = useCallback(() => emblaApi && emblaApi.scrollPrev(), [emblaApi]);
-  const scrollNext = useCallback(() => emblaApi && emblaApi.scrollNext(), [emblaApi]);
-  const scrollTo = useCallback((index: number) => emblaApi && emblaApi.scrollTo(index), [emblaApi]);
+  const scrollPrev = useCallback(
+    () => emblaApi && emblaApi.scrollPrev(),
+    [emblaApi]
+  );
+  const scrollNext = useCallback(
+    () => emblaApi && emblaApi.scrollNext(),
+    [emblaApi]
+  );
+  const scrollTo = useCallback(
+    (index: number) => emblaApi && emblaApi.scrollTo(index),
+    [emblaApi]
+  );
 
-  const lightboxPrev = useCallback(() => lightboxApi && lightboxApi.scrollPrev(), [lightboxApi]);
-  const lightboxNext = useCallback(() => lightboxApi && lightboxApi.scrollNext(), [lightboxApi]);
+  const lightboxPrev = useCallback(
+    () => lightboxApi && lightboxApi.scrollPrev(),
+    [lightboxApi]
+  );
+  const lightboxNext = useCallback(
+    () => lightboxApi && lightboxApi.scrollNext(),
+    [lightboxApi]
+  );
 
   return (
     <section className="space-y-4">
       {/* Embla Gallery Wrapper */}
       <div className="relative group">
-        <div className="overflow-hidden rounded-xl bg-bg-secondary" ref={emblaRef}>
+        <div
+          className="overflow-hidden rounded-xl bg-bg-secondary"
+          ref={emblaRef}>
           <div className="flex">
             {media.length > 0 ? (
               media.map((item, index) => (
@@ -107,8 +145,7 @@ export function PropertyDetailHero({ property }: PropertyDetailHeroProps) {
                   onClick={() => {
                     setSelectedIndex(index);
                     setLightboxOpen(true);
-                  }}
-                >
+                  }}>
                   {isVideoMedia(item) ? (
                     <div className="relative h-full w-full bg-black">
                       <video
@@ -157,15 +194,13 @@ export function PropertyDetailHero({ property }: PropertyDetailHeroProps) {
             <button
               onClick={scrollPrev}
               className="absolute left-4 top-1/2 -translate-y-1/2 hidden md:flex h-10 w-10 items-center justify-center rounded-full bg-bg-primary/80 text-text-primary hover:bg-bg-primary shadow-md transition cursor-pointer opacity-0 group-hover:opacity-100"
-              aria-label="Previous image"
-            >
+              aria-label="Previous image">
               <ChevronLeft size={20} />
             </button>
             <button
               onClick={scrollNext}
               className="absolute right-4 top-1/2 -translate-y-1/2 hidden md:flex h-10 w-10 items-center justify-center rounded-full bg-bg-primary/80 text-text-primary hover:bg-bg-primary shadow-md transition cursor-pointer opacity-0 group-hover:opacity-100"
-              aria-label="Next image"
-            >
+              aria-label="Next image">
               <ChevronRight size={20} />
             </button>
           </>
@@ -180,7 +215,9 @@ export function PropertyDetailHero({ property }: PropertyDetailHeroProps) {
               key={index}
               onClick={() => scrollTo(index)}
               className={`h-2 rounded-full transition-all duration-300 cursor-pointer ${
-                selectedIndex === index ? "w-6 bg-accent" : "w-2 bg-text-muted/40 hover:bg-text-muted/65"
+                selectedIndex === index
+                  ? "w-6 bg-accent"
+                  : "w-2 bg-text-muted/40 hover:bg-text-muted/65"
               }`}
               aria-label={`Go to slide ${index + 1}`}
             />
@@ -203,12 +240,18 @@ export function PropertyDetailHero({ property }: PropertyDetailHeroProps) {
                     ? "border-accent ring-2 ring-accent/30"
                     : "border-border hover:border-accent/70"
                 }`}
-                aria-label={`Go to slide ${index + 1}`}
-              >
+                aria-label={`Go to slide ${index + 1}`}>
                 {isVideo ? (
                   <div className="h-full w-full relative bg-black">
-                    <Play className="absolute inset-0 m-auto text-white w-6 h-6 z-10" fill="currentColor" />
-                    <video src={item.url} muted className="h-full w-full object-cover opacity-60" />
+                    <Play
+                      className="absolute inset-0 m-auto text-white w-6 h-6 z-10"
+                      fill="currentColor"
+                    />
+                    <video
+                      src={item.url}
+                      muted
+                      className="h-full w-full object-cover opacity-60"
+                    />
                   </div>
                 ) : (
                   <CloudinaryImage
@@ -227,7 +270,7 @@ export function PropertyDetailHero({ property }: PropertyDetailHeroProps) {
 
       {/* Fullscreen Lightbox Overlay */}
       {lightboxOpen && (
-        <div className="fixed inset-0 z-[100] flex flex-col bg-black/95 text-white">
+        <div className="fixed inset-0 z-100 flex flex-col bg-black/95 text-white">
           {/* Header */}
           <div className="flex items-center justify-between p-4 z-50">
             <span className="text-sm font-semibold tracking-wider">
@@ -236,8 +279,7 @@ export function PropertyDetailHero({ property }: PropertyDetailHeroProps) {
             <button
               onClick={() => setLightboxOpen(false)}
               className="text-white/80 hover:text-white p-2 hover:bg-white/10 rounded-full transition cursor-pointer"
-              aria-label="Close fullscreen gallery"
-            >
+              aria-label="Close fullscreen gallery">
               <X size={24} />
             </button>
           </div>
@@ -249,8 +291,7 @@ export function PropertyDetailHero({ property }: PropertyDetailHeroProps) {
                 media.map((item) => (
                   <div
                     key={`lb-${item.id}`}
-                    className="flex-[0_0_100%] min-w-0 h-full flex items-center justify-center p-4 select-none relative"
-                  >
+                    className="flex-[0_0_100%] min-w-0 h-full flex items-center justify-center p-4 select-none relative">
                     {isVideoMedia(item) ? (
                       <video
                         src={item.url}
@@ -259,9 +300,11 @@ export function PropertyDetailHero({ property }: PropertyDetailHeroProps) {
                         className="max-h-full max-w-full object-contain"
                       />
                     ) : (
-                      <img
+                      <CloudinaryImage
                         src={item.url}
                         alt={item.altText || property.title}
+                        width={1920}
+                        height={1080}
                         className="max-h-full max-w-full object-contain pointer-events-none"
                       />
                     )}
@@ -269,9 +312,11 @@ export function PropertyDetailHero({ property }: PropertyDetailHeroProps) {
                 ))
               ) : (
                 <div className="flex-[0_0_100%] min-w-0 h-full flex items-center justify-center p-4">
-                  <img
+                  <CloudinaryImage
                     src={property.image || ""}
                     alt={property.title}
+                    width={1920}
+                    height={1080}
                     className="max-h-full max-w-full object-contain"
                   />
                 </div>
@@ -285,15 +330,13 @@ export function PropertyDetailHero({ property }: PropertyDetailHeroProps) {
               <button
                 onClick={lightboxPrev}
                 className="absolute left-4 top-1/2 -translate-y-1/2 flex h-12 w-12 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition cursor-pointer z-50"
-                aria-label="Previous"
-              >
+                aria-label="Previous">
                 <ChevronLeft size={28} />
               </button>
               <button
                 onClick={lightboxNext}
                 className="absolute right-4 top-1/2 -translate-y-1/2 flex h-12 w-12 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition cursor-pointer z-50"
-                aria-label="Next"
-              >
+                aria-label="Next">
                 <ChevronRight size={28} />
               </button>
             </>
@@ -322,7 +365,11 @@ export function PropertyDetailHero({ property }: PropertyDetailHeroProps) {
         <CurrencyToggle selected={currency} onChange={setCurrency} />
 
         <PriceDisplay
-          ngnAmount={property.listingType === "RENTAL" ? property.rentalPrice : property.salePrice}
+          ngnAmount={
+            property.listingType === "RENTAL"
+              ? property.rentalPrice
+              : property.salePrice
+          }
           currency={currency}
           rates={rates}
           frequency={property.priceFrequency}

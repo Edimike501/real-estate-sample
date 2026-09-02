@@ -1,26 +1,26 @@
 "use client";
 
-import Link from "next/link";
-import { useState } from "react";
 import {
   ArrowLeft,
-  Calendar,
-  Edit,
-  Mail,
-  Phone,
-  MessageSquare,
   Building,
-  ExternalLink,
-  MessageCircle,
-  FileText,
-  User,
+  Calendar,
+  Check,
   Copy,
-  Check
+  Edit,
+  ExternalLink,
+  FileText,
+  Mail,
+  MessageCircle,
+  MessageSquare,
+  Phone,
+  User
 } from "lucide-react";
+import Link from "next/link";
+import { useState } from "react";
 
 import { AdminDeleteButton } from "@/components/admin/AdminDeleteButton";
-import { type Inquiry } from "@/types";
 import { formatEnum } from "@/lib/utils";
+import { type Inquiry } from "@/types";
 
 type InquiryDetailInquiry = Omit<Inquiry, "property"> & {
   property?: {
@@ -38,7 +38,10 @@ type InquiryDetailProps = {
 };
 
 function formatDate(value: string | Date) {
-  return new Intl.DateTimeFormat("en", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
+  return new Intl.DateTimeFormat("en", {
+    dateStyle: "medium",
+    timeStyle: "short"
+  }).format(new Date(value));
 }
 
 export function InquiryDetail({ inquiry }: InquiryDetailProps) {
@@ -56,13 +59,17 @@ export function InquiryDetail({ inquiry }: InquiryDetailProps) {
 
   const statusBadgeStyles: Record<string, string> = {
     NEW: "bg-blue-100 text-blue-800 dark:bg-blue-950/45 dark:text-blue-300 border border-blue-200 dark:border-blue-900/50",
-    CONTACTED: "bg-amber-100 text-amber-800 dark:bg-amber-950/45 dark:text-amber-300 border border-amber-200 dark:border-amber-900/50",
-    FOLLOW_UP: "bg-purple-100 text-purple-800 dark:bg-purple-950/45 dark:text-purple-300 border border-purple-200 dark:border-purple-900/50",
-    CLOSED: "bg-neutral-100 text-neutral-800 dark:bg-neutral-800/40 dark:text-neutral-300 border border-neutral-200 dark:border-neutral-700/50",
-    SPAM: "bg-red-100 text-red-800 dark:bg-red-950/45 dark:text-red-300 border border-red-200 dark:border-red-900/50",
+    CONTACTED:
+      "bg-amber-100 text-amber-800 dark:bg-amber-950/45 dark:text-amber-300 border border-amber-200 dark:border-amber-900/50",
+    FOLLOW_UP:
+      "bg-purple-100 text-purple-800 dark:bg-purple-950/45 dark:text-purple-300 border border-purple-200 dark:border-purple-900/50",
+    CLOSED:
+      "bg-neutral-100 text-neutral-800 dark:bg-neutral-800/40 dark:text-neutral-300 border border-neutral-200 dark:border-neutral-700/50",
+    SPAM: "bg-red-100 text-red-800 dark:bg-red-950/45 dark:text-red-300 border border-red-200 dark:border-red-900/50"
   };
 
-  const statusClass = statusBadgeStyles[inquiry.status] || statusBadgeStyles.NEW;
+  const statusClass =
+    statusBadgeStyles[inquiry.status] || statusBadgeStyles.NEW;
   const publicUrl = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/properties/${inquiry.property?.slug}`;
 
   return (
@@ -71,16 +78,14 @@ export function InquiryDetail({ inquiry }: InquiryDetailProps) {
       <div className="flex flex-wrap items-center justify-between gap-3 bg-bg-secondary border border-border p-4 rounded-lg shadow-sm">
         <Link
           href="/admin/dashboard/inquiries"
-          className="inline-flex items-center gap-1.5 text-xs font-semibold text-text-secondary hover:text-text-primary transition-colors"
-        >
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-text-secondary hover:text-text-primary transition-colors">
           <ArrowLeft size={14} />
           Back to Inquiries
         </Link>
         <div className="flex flex-wrap gap-2">
           <Link
             href={`/admin/dashboard/inquiries/${inquiry.id}/edit`}
-            className="inline-flex items-center gap-1.5 rounded-md bg-accent px-4 py-2 text-xs font-semibold text-white shadow-sm hover:opacity-90 transition"
-          >
+            className="inline-flex items-center gap-1.5 rounded-md bg-accent px-4 py-2 text-xs font-semibold text-white shadow-sm hover:opacity-90 transition">
             <Edit size={14} />
             Edit Status / Notes
           </Link>
@@ -95,7 +100,6 @@ export function InquiryDetail({ inquiry }: InquiryDetailProps) {
 
       {/* 2. Content Layout Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
         {/* Left Columns: Guest Profile & Message Contents */}
         <div className="lg:col-span-2 space-y-6">
           {/* Guest Card */}
@@ -108,15 +112,16 @@ export function InquiryDetail({ inquiry }: InquiryDetailProps) {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
               <div className="bg-bg-primary p-3 rounded-lg border border-border/50 space-y-1">
                 <span className="text-text-muted block">Guest Name</span>
-                <span className="font-bold text-sm text-text-primary block">{inquiry.guestName}</span>
+                <span className="font-bold text-sm text-text-primary block">
+                  {inquiry.guestName}
+                </span>
               </div>
 
               <div className="bg-bg-primary p-3 rounded-lg border border-border/50 space-y-1">
                 <span className="text-text-muted block">Phone Number</span>
                 <a
                   href={`tel:${inquiry.guestPhone}`}
-                  className="font-bold text-sm text-accent hover:underline flex items-center gap-1"
-                >
+                  className="font-bold text-sm text-accent hover:underline flex items-center gap-1">
                   <Phone size={13} />
                   {inquiry.guestPhone}
                 </a>
@@ -127,13 +132,14 @@ export function InquiryDetail({ inquiry }: InquiryDetailProps) {
                 {inquiry.guestEmail ? (
                   <a
                     href={`mailto:${inquiry.guestEmail}`}
-                    className="font-bold text-sm text-accent hover:underline flex items-center gap-1 truncate"
-                  >
+                    className="font-bold text-sm text-accent hover:underline flex items-center gap-1 truncate">
                     <Mail size={13} />
                     {inquiry.guestEmail}
                   </a>
                 ) : (
-                  <span className="text-text-secondary italic">Not provided</span>
+                  <span className="text-text-secondary italic">
+                    Not provided
+                  </span>
                 )}
               </div>
 
@@ -155,7 +161,7 @@ export function InquiryDetail({ inquiry }: InquiryDetailProps) {
                 Submitted Message
               </h3>
               <p className="whitespace-pre-line text-sm leading-relaxed text-text-secondary bg-bg-primary p-4 rounded-lg border border-border/60">
-                "{inquiry.message}"
+                &quot;{inquiry.message}&quot;
               </p>
             </div>
           )}
@@ -164,13 +170,15 @@ export function InquiryDetail({ inquiry }: InquiryDetailProps) {
           <div className="rounded-lg border border-border bg-bg-secondary p-5 shadow-sm space-y-3">
             <h3 className="text-sm font-bold uppercase tracking-wider text-text-muted border-b border-border/80 pb-2 flex items-center justify-between gap-1.5">
               <span className="flex items-center gap-1.5">
-                <MessageCircle size={16} className="text-emerald-600 fill-emerald-600/10" />
+                <MessageCircle
+                  size={16}
+                  className="text-emerald-600 fill-emerald-600/10"
+                />
                 WhatsApp Message Sent
               </span>
               <button
                 onClick={handleCopy}
-                className="inline-flex items-center gap-1 text-xs text-accent hover:underline cursor-pointer"
-              >
+                className="inline-flex items-center gap-1 text-xs text-accent hover:underline cursor-pointer">
                 {copied ? (
                   <>
                     <Check size={12} />
@@ -202,11 +210,12 @@ export function InquiryDetail({ inquiry }: InquiryDetailProps) {
             <h3 className="text-sm font-bold uppercase tracking-wider text-text-muted border-b border-border/80 pb-2">
               Inquiry Metadata
             </h3>
-            
+
             <div className="space-y-3 text-xs">
               <div className="flex justify-between items-center">
                 <span className="text-text-muted">Status:</span>
-                <span className={`px-2.5 py-1 rounded-full font-bold ${statusClass}`}>
+                <span
+                  className={`px-2.5 py-1 rounded-full font-bold ${statusClass}`}>
                   {formatEnum(inquiry.status)}
                 </span>
               </div>
@@ -222,26 +231,31 @@ export function InquiryDetail({ inquiry }: InquiryDetailProps) {
 
           {/* Connected Property Card */}
           {inquiry.property ? (
-            <div className="rounded-lg border border-border bg-accent-muted/10 bg-bg-secondary p-5 shadow-sm space-y-3">
+            <div className="rounded-lg border border-border bg-accent-muted/10 p-5 shadow-sm space-y-3">
               <h3 className="text-sm font-bold uppercase tracking-wider text-text-muted border-b border-border/80 pb-2 flex items-center gap-1.5">
                 <Building size={16} className="text-accent" />
                 Inquired Property
               </h3>
-              
+
               <div className="bg-bg-primary border border-border p-3.5 rounded-lg space-y-2 flex flex-col">
                 <div>
                   <h4 className="font-bold text-sm text-text-primary leading-tight">
                     {inquiry.property.title}
                   </h4>
                   <p className="text-xs text-text-muted mt-0.5 font-normal">
-                    {[inquiry.property.city, inquiry.property.lga, inquiry.property.state].filter(Boolean).join(", ")}
+                    {[
+                      inquiry.property.city,
+                      inquiry.property.lga,
+                      inquiry.property.state
+                    ]
+                      .filter(Boolean)
+                      .join(", ")}
                   </p>
                 </div>
-                
+
                 <Link
                   href={`/admin/dashboard/properties/${inquiry.property.id}`}
-                  className="inline-flex w-full items-center justify-center gap-1 rounded-md bg-accent px-3 py-2 text-xs font-semibold text-white hover:opacity-90 shadow-sm transition mt-2 text-center"
-                >
+                  className="inline-flex w-full items-center justify-center gap-1 rounded-md bg-accent px-3 py-2 text-xs font-semibold text-white hover:opacity-90 shadow-sm transition mt-2 text-center">
                   View Property Details
                 </Link>
 
@@ -249,8 +263,7 @@ export function InquiryDetail({ inquiry }: InquiryDetailProps) {
                   href={publicUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex w-full items-center justify-center gap-1 rounded-md border border-accent text-accent px-3 py-2 text-xs font-semibold hover:bg-accent/5 shadow-sm transition cursor-pointer text-center"
-                >
+                  className="inline-flex w-full items-center justify-center gap-1 rounded-md border border-accent text-accent px-3 py-2 text-xs font-semibold hover:bg-accent/5 shadow-sm transition cursor-pointer text-center">
                   <ExternalLink size={12} />
                   View Property
                 </a>
@@ -280,12 +293,12 @@ export function InquiryDetail({ inquiry }: InquiryDetailProps) {
               </p>
             ) : (
               <p className="text-xs text-text-muted italic py-2">
-                No administrative notes added yet. Edit the status to append internal notes for your team.
+                No administrative notes added yet. Edit the status to append
+                internal notes for your team.
               </p>
             )}
           </div>
         </div>
-
       </div>
     </div>
   );

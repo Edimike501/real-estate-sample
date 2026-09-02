@@ -1,47 +1,35 @@
 "use client";
 
 import { Send } from "lucide-react";
-import { FormEvent, useState } from "react";
+import { FormEvent } from "react";
 import { toast } from "sonner";
 
-type SubmitState = "idle" | "submitting" | "success" | "error";
+import { useSendContact } from "@/hooks/useContact";
 
 export default function ContactForm() {
-  const [submitState, setSubmitState] = useState<SubmitState>("idle");
-  const [statusMessage, setStatusMessage] = useState("");
+  const sendContactMutation = useSendContact();
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setSubmitState("submitting");
-    setStatusMessage("");
-
     const form = event.currentTarget;
     const formData = new FormData(form);
+    const entries = Object.fromEntries(formData);
+    const payload = {
+      name: String(entries.name || ""),
+      email: String(entries.email || ""),
+      phone: entries.phone ? String(entries.phone) : undefined,
+      message: String(entries.message || "")
+    };
 
-    try {
-      const response = await fetch("/api/contact", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(Object.fromEntries(formData))
-      });
-
-      if (!response.ok) {
-        throw new Error("Contact request failed");
+    sendContactMutation.mutate(payload, {
+      onSuccess: () => {
+        form.reset();
+        toast.success("Message sent. We'll be in touch shortly.");
+      },
+      onError: (err) => {
+        toast.error(err instanceof Error ? err.message : "Something went wrong. Please try WhatsApp or email.");
       }
-
-      form.reset();
-      setSubmitState("success");
-      const successMsg = "Message sent. We'll be in touch shortly.";
-      setStatusMessage(successMsg);
-      toast.success(successMsg);
-    } catch {
-      setSubmitState("error");
-      const errorMsg = "Something went wrong. Please try WhatsApp or email.";
-      setStatusMessage(errorMsg);
-      toast.error(errorMsg);
-    }
+    });
   }
 
   return (
@@ -100,20 +88,11 @@ export default function ContactForm() {
 
       <button
         type="submit"
-        disabled={submitState === "submitting"}
+        disabled={sendContactMutation.isPending}
         className="inline-flex items-center justify-center gap-2 rounded-lg bg-accent px-6 py-3 font-semibold text-white transition-colors hover:bg-accent-light disabled:cursor-not-allowed disabled:opacity-70">
         <Send className="h-5 w-5" />
-        {submitState === "submitting" ? "Sending..." : "Send Message"}
+        {sendContactMutation.isPending ? "Sending..." : "Send Message"}
       </button>
-
-      {statusMessage && (
-        <p
-          className={`text-sm ${
-            submitState === "success" ? "text-green-600" : "text-red-600"
-          }`}>
-          {statusMessage}
-        </p>
-      )}
     </form>
   );
 }

@@ -7,9 +7,10 @@ import { useMemo } from "react";
 import { useDiasporaLocation } from "@/hooks/useDiasporaLocation";
 import { useProperties } from "@/hooks/useProperties";
 import { buildWhatsAppLink } from "@/lib/whatsapp";
-import { type PropertyFilters } from "@/types";
+import { type Property, type PropertyFilters } from "@/types";
 import { InquirySource } from "@/types/enums";
 import { useGuestSession } from "@/hooks/useGuestSession";
+import { useSubmitInquiry } from "@/hooks/useInquiries";
 
 import { PropertyCard } from "./PropertyCard";
 
@@ -17,6 +18,7 @@ export function PropertyGrid() {
   const searchParams = useSearchParams();
   const { currency } = useDiasporaLocation();
   const { session } = useGuestSession();
+  const submitInquiryMutation = useSubmitInquiry();
   const filters = useMemo<PropertyFilters>(
     () => ({
       search: searchParams.get("search") ?? undefined,
@@ -90,18 +92,12 @@ export function PropertyGrid() {
           target="_blank"
           rel="noopener noreferrer"
           onClick={() => {
-            fetch("/api/inquiries", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                guestName: session?.name || "Guest",
-                guestPhone: session?.phone || "0000000000",
-                guestEmail: session?.email || undefined,
-                source: InquirySource.CONTACT_FORM,
-                message: waMessage,
-              }),
-            }).catch((err) => {
-              console.error("Error submitting search fallback inquiry:", err);
+            submitInquiryMutation.mutate({
+              guestName: session?.name || "Guest",
+              guestPhone: session?.phone || "0000000000",
+              guestEmail: session?.email || undefined,
+              source: InquirySource.CONTACT_FORM,
+              message: waMessage
             });
           }}
           className="inline-flex items-center justify-center rounded-md bg-accent px-6 py-3 text-sm font-semibold text-white hover:bg-accent-light transition shadow-sm cursor-pointer">
@@ -113,7 +109,7 @@ export function PropertyGrid() {
 
   return (
     <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-      {data.properties.map((property, index) => (
+      {data.properties.map((property: Property, index: number) => (
         <PropertyCard
           key={property.id}
           property={property}

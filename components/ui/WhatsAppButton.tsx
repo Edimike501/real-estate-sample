@@ -1,9 +1,12 @@
 "use client";
 
-import { cn, generateWhatsAppUrl } from "@/lib/utils";
 import { MessageCircle } from "lucide-react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
+
 import { useGuestSession } from "@/hooks/useGuestSession";
+import { useSubmitInquiry } from "@/hooks/useInquiries";
+import { cn, generateWhatsAppUrl } from "@/lib/utils";
 import { InquirySource } from "@/types/enums";
 
 interface WhatsAppButtonProps {
@@ -21,23 +24,23 @@ export default function WhatsAppButton({
   label = "Chat on WhatsApp",
   className = ""
 }: WhatsAppButtonProps) {
+  const pathname = usePathname();
   const whatsappUrl = generateWhatsAppUrl(phoneNumber, message);
   const { session } = useGuestSession();
+  const submitInquiryMutation = useSubmitInquiry();
+
+  if (variant === "floating" && pathname?.startsWith("/admin")) {
+    return null;
+  }
 
   const handleClick = () => {
     const source = variant === "floating" ? InquirySource.WHATSAPP_FLOAT : InquirySource.CONTACT_FORM;
-    fetch("/api/inquiries", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        guestName: session?.name || "Guest",
-        guestPhone: session?.phone || "0000000000",
-        guestEmail: session?.email || undefined,
-        source,
-        message: message || undefined,
-      }),
-    }).catch((err) => {
-      console.error("Error submitting WhatsApp inquiry:", err);
+    submitInquiryMutation.mutate({
+      guestName: session?.name || "Guest",
+      guestPhone: session?.phone || "0000000000",
+      guestEmail: session?.email || undefined,
+      source,
+      message: message || undefined
     });
   };
 
@@ -70,4 +73,3 @@ export default function WhatsAppButton({
     </Link>
   );
 }
-

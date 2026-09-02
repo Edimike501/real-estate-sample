@@ -19,7 +19,7 @@ export default function CTA() {
             message={message}
             label={cta.buttonLabel}
             variant="inline"
-            className="min-w-56 bg-white !text-accent hover:bg-accent-light hover:!text-white font-bold [&_svg]:text-current"
+            className="min-w-56 bg-white text-accent! hover:bg-accent-light hover:text-white! font-bold [&_svg]:text-current"
           />
         </div>
       </AnimatedSection>

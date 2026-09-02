@@ -1,33 +1,29 @@
-import { getServerSession } from "next-auth";
-import { notFound, redirect } from "next/navigation";
+"use client";
 
 import { ChangePasswordForm } from "@/components/admin/ChangePasswordForm";
-import { authOptions } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { useCurrentUser } from "@/hooks/useUsers";
 
-export default async function SettingsPage() {
-  const session = await getServerSession(authOptions);
+export default function SettingsPage() {
+  const { data: user, isLoading, isError, error } = useCurrentUser();
 
-  if (!session?.user?.id) {
-    redirect("/admin/login");
+  if (isLoading) {
+    return (
+      <div className="space-y-6 animate-pulse">
+        <div className="h-24 rounded-lg bg-bg-secondary border border-border" />
+        <div className="h-64 rounded-lg bg-bg-secondary border border-border" />
+      </div>
+    );
   }
 
-  const user = await prisma.user.findUnique({
-    where: { id: session.user.id },
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      role: true,
-      isActive: true,
-      createdBy: true,
-      createdAt: true,
-      updatedAt: true,
-    },
-  });
-
-  if (!user) {
-    notFound();
+  if (isError || !user) {
+    return (
+      <div className="rounded-lg border border-red-200 bg-red-50 p-6 text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-400">
+        <h3 className="font-semibold text-lg">Error loading account profile</h3>
+        <p className="mt-1 text-sm">
+          {error instanceof Error ? error.message : "Failed to load user profile."}
+        </p>
+      </div>
+    );
   }
 
   return (

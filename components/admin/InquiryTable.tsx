@@ -2,14 +2,20 @@
 
 import { Edit, Eye, Trash2, X } from "lucide-react";
 import Link from "next/link";
-import { useSearchParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useState } from "react";
 import { toast } from "sonner";
 
 import { AppSelect } from "@/components/ui/app-select";
 import { useDebounce } from "@/hooks/use-debounce.hooks";
+import {
+  useAdminInquiries,
+  useDeleteInquiry,
+  useUpdateInquiryStatus
+} from "@/hooks/useInquiries";
+import { useAdminProperties } from "@/hooks/useProperties";
 import { formatEnum } from "@/lib/utils";
-import { type Inquiry } from "@/types";
+import { type Inquiry, type Property } from "@/types";
 import { InquiryStatus } from "@/types/enums";
 
 export function InquiryTable() {
@@ -18,71 +24,34 @@ export function InquiryTable() {
   const urlPropertyId = searchParams.get("propertyId") || "";
 
   const [searchInput, setSearchInput] = useState("");
-  const [inquiries, setInquiries] = useState<Inquiry[]>([]);
-  const [properties, setProperties] = useState<{ id: string; title: string }[]>([]);
-  const [selectedPropertyId, setSelectedPropertyId] = useState<string>(urlPropertyId);
-  const [updatingIds, setUpdatingIds] = useState<Record<string, boolean>>({});
-
+  const selectedPropertyId = urlPropertyId;
   const debouncedSearch = useDebounce(searchInput, 400);
 
-  // Sync state with URL propertyId
-  useEffect(() => {
-    setSelectedPropertyId(urlPropertyId);
-  }, [urlPropertyId]);
+  // Fetch properties for property filter options using React Query
+  const { data: propertiesData } = useAdminProperties({});
+  const properties = propertiesData?.properties || [];
 
-  // Fetch properties for the filter dropdown
-  useEffect(() => {
-    fetch("/api/properties?select=id,title")
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data: { properties: { id: string; title: string }[] } | null) => {
-        if (data?.properties) {
-          setProperties(data.properties);
-        }
-      });
-  }, []);
+  // Fetch inquiries using React Query
+  const { data, isLoading } = useAdminInquiries({
+    search: debouncedSearch,
+    propertyId: selectedPropertyId
+  });
+  const inquiries = data?.inquiries || [];
 
-  // Fetch inquiries based on search and property filter
-  useEffect(() => {
-    const url = selectedPropertyId
-      ? `/api/inquiries?propertyId=${selectedPropertyId}`
-      : "/api/inquiries";
+  const updateStatusMutation = useUpdateInquiryStatus();
+  const deleteInquiryMutation = useDeleteInquiry();
 
-    fetch(url)
-      .then((response) => (response.ok ? response.json() : null))
-      .then((data: { inquiries: Inquiry[] } | null) => {
-        if (!data) return;
-        const items = data.inquiries.filter((inquiry) => {
-          if (!debouncedSearch) return true;
-          return (
-            inquiry.guestName
-              .toLowerCase()
-              .includes(debouncedSearch.toLowerCase()) ||
-            inquiry.guestPhone
-              .toLowerCase()
-              .includes(debouncedSearch.toLowerCase())
-          );
-        });
-        setInquiries(items);
-      });
-  }, [debouncedSearch, selectedPropertyId]);
-
-  async function performDeleteInquiry(inquiry: Inquiry) {
-    try {
-      const response = await fetch(`/api/inquiries/${inquiry.id}`, {
-        method: "DELETE"
-      });
-
-      if (response.ok) {
-        setInquiries((current) =>
-          current.filter((item) => item.id !== inquiry.id)
-        );
+  function performDeleteInquiry(inquiry: Inquiry) {
+    deleteInquiryMutation.mutate(inquiry.id, {
+      onSuccess: () => {
         toast.success("Inquiry deleted successfully");
-      } else {
-        toast.error("Failed to delete inquiry");
+      },
+      onError: (err) => {
+        toast.error(
+          err instanceof Error ? err.message : "Failed to delete inquiry"
+        );
       }
-    } catch {
-      toast.error("Failed to delete inquiry");
-    }
+    });
   }
 
   function deleteInquiry(inquiry: Inquiry) {
@@ -90,57 +59,32 @@ export function InquiryTable() {
       description: `Delete inquiry from "${inquiry.guestName}"?`,
       action: {
         label: "Delete",
-        onClick: () => void performDeleteInquiry(inquiry),
+        onClick: () => performDeleteInquiry(inquiry)
       },
       cancel: {
         label: "Cancel",
-        onClick: () => {},
-      },
+        onClick: () => {}
+      }
     });
   }
 
-  async function updateStatus(inquiry: Inquiry, newStatus: string) {
-    const originalStatus = inquiry.status;
-
-    // Optimistically update UI
-    setInquiries((current) =>
-      current.map((item) =>
-        item.id === inquiry.id
-          ? { ...item, status: newStatus as InquiryStatus }
-          : item
-      )
-    );
-    setUpdatingIds((prev) => ({ ...prev, [inquiry.id]: true }));
-
-    try {
-      const response = await fetch(`/api/inquiries/${inquiry.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: inquiry.id, status: newStatus })
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to update status");
+  function handleStatusChange(inquiryId: string, newStatus: string) {
+    updateStatusMutation.mutate(
+      { id: inquiryId, status: newStatus },
+      {
+        onSuccess: () => {
+          toast.success("Inquiry status updated");
+        },
+        onError: (err) => {
+          toast.error(
+            err instanceof Error ? err.message : "Failed to update status"
+          );
+        }
       }
-      toast.success("Inquiry status updated");
-    } catch (err) {
-      console.error(err);
-      // Revert status on error
-      setInquiries((current) =>
-        current.map((item) =>
-          item.id === inquiry.id
-            ? { ...item, status: originalStatus }
-            : item
-        )
-      );
-      toast.error("Failed to update status. Reverted.");
-    } finally {
-      setUpdatingIds((prev) => ({ ...prev, [inquiry.id]: false }));
-    }
+    );
   }
 
   const handlePropertyChange = (propertyId: string) => {
-    setSelectedPropertyId(propertyId);
     const params = new URLSearchParams(searchParams.toString());
     if (propertyId) {
       params.set("propertyId", propertyId);
@@ -157,21 +101,23 @@ export function InquiryTable() {
           value={searchInput}
           onChange={(event) => setSearchInput(event.target.value)}
           placeholder="Search inquiries by guest name or phone..."
-          className="flex-1 min-w-[200px] rounded-md border border-border bg-bg-primary px-3 py-2.5 text-sm text-text-primary focus:border-accent focus:outline-none"
+          className="flex-1 min-w-50 rounded-md border border-border bg-bg-primary px-3 py-2.5 text-sm text-text-primary focus:border-accent focus:outline-none"
         />
         <div className="w-64 flex items-center gap-1.5">
           <AppSelect
             value={selectedPropertyId}
             placeholder="Filter by Property"
-            options={properties.map((p) => ({ value: p.id, label: p.title }))}
+            options={properties.map((p: Property) => ({
+              value: p.id,
+              label: p.title
+            }))}
             onValueChange={handlePropertyChange}
           />
           {selectedPropertyId && (
             <button
               onClick={() => handlePropertyChange("")}
               className="p-2 border border-border rounded-md text-text-muted hover:text-text-primary hover:border-accent bg-bg-primary cursor-pointer"
-              title="Clear property filter"
-            >
+              title="Clear property filter">
               <X size={16} />
             </button>
           )}
@@ -179,7 +125,7 @@ export function InquiryTable() {
       </div>
 
       <div className="w-full overflow-x-auto rounded-md border border-border/80 bg-bg-primary">
-        <table className="min-w-[800px] w-full text-sm border-collapse">
+        <table className="min-w-187.5 w-full text-sm border-collapse">
           <thead>
             <tr className="text-left text-text-muted bg-bg-secondary/40 border-b border-border/60">
               <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider text-text-muted whitespace-nowrap">
@@ -203,8 +149,16 @@ export function InquiryTable() {
             </tr>
           </thead>
           <tbody className="divide-y divide-border/80">
-            {inquiries.length > 0 ? (
-              inquiries.map((inquiry) => (
+            {isLoading ? (
+              <tr>
+                <td
+                  colSpan={6}
+                  className="px-4 py-8 text-center text-text-muted">
+                  Loading inquiries...
+                </td>
+              </tr>
+            ) : inquiries.length > 0 ? (
+              inquiries.map((inquiry: Inquiry) => (
                 <tr
                   key={inquiry.id}
                   className="hover:bg-bg-secondary/15 transition-colors">
@@ -220,12 +174,13 @@ export function InquiryTable() {
                         href={`${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/properties/${inquiry.property.slug}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-accent hover:underline font-medium"
-                      >
+                        className="text-accent hover:underline font-medium">
                         {inquiry.property.title}
                       </a>
                     ) : (
-                      <span className="text-text-muted italic">General Inquiry</span>
+                      <span className="text-text-muted italic">
+                        General Inquiry
+                      </span>
                     )}
                   </td>
                   <td className="px-4 py-3.5 text-text-secondary whitespace-nowrap">
@@ -237,19 +192,16 @@ export function InquiryTable() {
                         name={`status-${inquiry.id}`}
                         value={String(inquiry.status)}
                         placeholder="Status"
-                        disabled={updatingIds[inquiry.id]}
+                        disabled={updateStatusMutation.isPending}
                         options={Object.values(InquiryStatus).map((value) => ({
                           value,
                           label: formatEnum(value)
                         }))}
                         onValueChange={(value) =>
-                          void updateStatus(inquiry, value)
+                          handleStatusChange(inquiry.id, value)
                         }
                         className="w-36"
                       />
-                      {updatingIds[inquiry.id] && (
-                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-accent border-t-transparent flex-shrink-0" />
-                      )}
                     </div>
                   </td>
                   <td className="px-4 py-3.5 whitespace-nowrap">
@@ -269,7 +221,7 @@ export function InquiryTable() {
                       <button
                         type="button"
                         title="Delete inquiry"
-                        onClick={() => void deleteInquiry(inquiry)}
+                        onClick={() => deleteInquiry(inquiry)}
                         className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-border text-text-secondary transition hover:border-red-400 hover:text-red-500 bg-bg-primary cursor-pointer">
                         <Trash2 size={15} />
                       </button>

@@ -1,3 +1,5 @@
+"use client";
+
 import {
   ArrowUpRight,
   Building2,
@@ -14,8 +16,14 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 
-import { prisma } from "@/lib/prisma";
+import { useAdminDashboard } from "@/hooks/useDashboard";
+import { type AdminDashboardStats } from "@/lib/api/dashboard.api";
 import { formatEnum } from "@/lib/utils";
+
+type TodayInquiryItem = AdminDashboardStats["todayInquiries"][number];
+type RecentInquiryItem = AdminDashboardStats["recentInquiries"][number];
+type RecentPropertyItem = AdminDashboardStats["recentProperties"][number];
+type PropertyMediaItem = NonNullable<RecentPropertyItem["media"]>[number];
 
 function formatTimeReceived(dateInput: Date | string): string {
   const date = typeof dateInput === "string" ? new Date(dateInput) : dateInput;
@@ -31,131 +39,70 @@ function formatTimeReceived(dateInput: Date | string): string {
   return "today";
 }
 
-export default async function AdminDashboardPage() {
-  const startOfDay = new Date();
-  startOfDay.setUTCHours(0, 0, 0, 0);
+const statusBadgeStyles: Record<string, string> = {
+  AVAILABLE:
+    "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-900/50",
+  SOLD: "bg-neutral-100 text-neutral-800 dark:bg-neutral-800/40 dark:text-neutral-300 border border-neutral-200 dark:border-neutral-700/50",
+  LET: "bg-purple-100 text-purple-800 dark:bg-purple-950/40 dark:text-purple-300 border border-purple-200 dark:border-purple-900/50",
+  UNDER_OFFER:
+    "bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-200 dark:border-amber-900/50",
+  COMING_SOON:
+    "bg-blue-100 text-blue-800 dark:bg-blue-950/40 dark:text-blue-300 border border-blue-200 dark:border-blue-900/50"
+};
 
-  const [
+const typeColorStyles: Record<string, string> = {
+  SALE: "bg-blue-600",
+  RENTAL: "bg-indigo-600",
+  LAND: "bg-emerald-600",
+  DEVELOPMENT: "bg-purple-600"
+};
+
+export default function AdminDashboardPage() {
+  const { data, isLoading, isError, error } = useAdminDashboard();
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6 animate-pulse">
+        <div className="h-24 rounded-lg bg-bg-secondary border border-border" />
+        <div className="h-36 rounded-lg bg-bg-secondary border border-border" />
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="h-32 rounded-lg bg-bg-secondary border border-border" />
+          <div className="h-32 rounded-lg bg-bg-secondary border border-border" />
+          <div className="h-32 rounded-lg bg-bg-secondary border border-border" />
+        </div>
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <div className="h-64 rounded-lg bg-bg-secondary border border-border" />
+          <div className="h-64 rounded-lg bg-bg-secondary border border-border" />
+        </div>
+      </div>
+    );
+  }
+
+  if (isError || !data) {
+    return (
+      <div className="rounded-lg border border-red-200 bg-red-50 p-6 text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-400">
+        <h3 className="font-semibold text-lg">Error loading dashboard</h3>
+        <p className="mt-1 text-sm">
+          {error instanceof Error ? error.message : "Failed to load dashboard metrics."}
+        </p>
+      </div>
+    );
+  }
+
+  const {
     totalProperties,
     featuredProperties,
-    propertiesByType,
-    propertiesByStatus,
+    typeCounts,
+    statusCounts,
     totalInquiries,
     newInquiries,
-    inquiriesByStatus,
+    inquiryStatusCounts,
     totalUsers,
     recentInquiries,
     recentProperties,
     todayInquiries,
     todayInquiriesCount
-  ] = await Promise.all([
-    prisma.property.count({ where: { deletedAt: null } }),
-    prisma.property.count({ where: { isFeatured: true, deletedAt: null } }),
-    prisma.property.groupBy({
-      by: ["listingType"],
-      _count: { _all: true },
-      where: { deletedAt: null }
-    }),
-    prisma.property.groupBy({
-      by: ["status"],
-      _count: { _all: true },
-      where: { deletedAt: null }
-    }),
-    prisma.inquiry.count(),
-    prisma.inquiry.count({ where: { status: "NEW" } }),
-    prisma.inquiry.groupBy({
-      by: ["status"],
-      _count: { _all: true }
-    }),
-    prisma.user.count(),
-    prisma.inquiry.findMany({
-      orderBy: { createdAt: "desc" },
-      take: 5,
-      include: {
-        property: {
-          select: {
-            id: true,
-            title: true
-          }
-        }
-      }
-    }),
-    prisma.property.findMany({
-      where: { deletedAt: null },
-      orderBy: { createdAt: "desc" },
-      take: 5,
-      include: {
-        media: {
-          orderBy: { order: "asc" },
-          take: 1
-        }
-      }
-    }),
-    prisma.inquiry.findMany({
-      where: {
-        createdAt: { gte: startOfDay }
-      },
-      orderBy: { createdAt: "desc" },
-      take: 5,
-      include: {
-        property: {
-          select: {
-            id: true,
-            title: true
-          }
-        }
-      }
-    }),
-    prisma.inquiry.count({
-      where: {
-        createdAt: { gte: startOfDay }
-      }
-    })
-  ]);
-
-  // Transform counts to easy-to-use maps
-  const typeCounts = propertiesByType.reduce(
-    (acc, curr) => {
-      acc[curr.listingType] = curr._count._all;
-      return acc;
-    },
-    {} as Record<string, number>
-  );
-
-  const statusCounts = propertiesByStatus.reduce(
-    (acc, curr) => {
-      acc[curr.status] = curr._count._all;
-      return acc;
-    },
-    {} as Record<string, number>
-  );
-
-  const inquiryStatusCounts = inquiriesByStatus.reduce(
-    (acc, curr) => {
-      acc[curr.status] = curr._count._all;
-      return acc;
-    },
-    {} as Record<string, number>
-  );
-
-  // Styles for badges
-  const statusBadgeStyles: Record<string, string> = {
-    AVAILABLE:
-      "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-900/50",
-    SOLD: "bg-neutral-100 text-neutral-800 dark:bg-neutral-800/40 dark:text-neutral-300 border border-neutral-200 dark:border-neutral-700/50",
-    LET: "bg-purple-100 text-purple-800 dark:bg-purple-950/40 dark:text-purple-300 border border-purple-200 dark:border-purple-900/50",
-    UNDER_OFFER:
-      "bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-200 dark:border-amber-900/50",
-    COMING_SOON:
-      "bg-blue-100 text-blue-800 dark:bg-blue-950/40 dark:text-blue-300 border border-blue-200 dark:border-blue-900/50"
-  };
-
-  const typeColorStyles: Record<string, string> = {
-    SALE: "bg-blue-600",
-    RENTAL: "bg-indigo-600",
-    LAND: "bg-emerald-600",
-    DEVELOPMENT: "bg-purple-600"
-  };
+  } = data;
 
   return (
     <div className="space-y-6">
@@ -199,16 +146,16 @@ export default async function AdminDashboardPage() {
           <div className="flex flex-col justify-center">
             {todayInquiries.length > 0 ? (
               <div className="divide-y divide-border/60">
-                {todayInquiries.map((inquiry) => (
+                {todayInquiries.map((inquiry: TodayInquiryItem) => (
                   <div
                     key={inquiry.id}
                     className="py-2.5 first:pt-0 last:pb-0 flex items-center justify-between gap-3 text-xs">
                     <div className="min-w-0 flex items-center">
-                      <span className="font-semibold text-text-primary truncate max-w-[150px]">
+                      <span className="font-semibold text-text-primary truncate max-w-37.5">
                         {inquiry.guestName}
                       </span>
                       <span className="text-text-muted mx-1.5">•</span>
-                      <span className="text-text-secondary truncate max-w-[200px] md:max-w-md">
+                      <span className="text-text-secondary truncate max-w-50 md:max-w-md">
                         {inquiry.property
                           ? inquiry.property.title
                           : "General inquiry"}
@@ -445,7 +392,7 @@ export default async function AdminDashboardPage() {
           </div>
           <div className="mt-4 divide-y divide-border">
             {recentInquiries.length > 0 ? (
-              recentInquiries.map((inquiry) => (
+              recentInquiries.map((inquiry: RecentInquiryItem) => (
                 <div
                   key={inquiry.id}
                   className="py-3 first:pt-0 last:pb-0 flex items-start justify-between gap-3 text-xs">
@@ -499,9 +446,9 @@ export default async function AdminDashboardPage() {
           </div>
           <div className="mt-4 divide-y divide-border">
             {recentProperties.length > 0 ? (
-              recentProperties.map((property) => {
+              recentProperties.map((property: RecentPropertyItem) => {
                 const firstImage = property.media?.find(
-                  (m) => m.mediaType === "IMAGE"
+                  (m: PropertyMediaItem) => m.mediaType === "IMAGE"
                 );
                 const preview =
                   firstImage?.thumbnailUrl ??

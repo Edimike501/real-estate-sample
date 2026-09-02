@@ -127,7 +127,7 @@ export default async function RootLayout({
 
   return (
     // <html lang="en" suppressHydrationWarning nonce={nonce}>
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning data-scroll-behavior="smooth">
       {/*  <meta
         name="google-site-verification"
         content="QNfT_B0u38uhJYWrXmuR5gtsGA5MO8ekvEJmoHOqvy8"
